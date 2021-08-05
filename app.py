@@ -52,10 +52,9 @@ class MyClient(discord.Client):
         self.my_background_task.start()
 
     async def on_ready(self):
-        print('Logged in as')
-        print(self.user.name)
-        print(self.user.id)
-        print('------')
+        channel = self.get_channel(872725671858827304)
+        await channel.send("Logado...")
+
 
     @tasks.loop(seconds=15) # task runs every 15 seconds
     async def my_background_task(self):
