@@ -3,9 +3,8 @@ import sqlite3
 import os
 
 
-file_path = os.path.abspath(os.path.dirname(__file__))  
-db_paths = os.path.abspath(os.path.join(file_path, '../'))
-db_path = '/home/noct/Hdzin/Jobs/workana/discord/crawler/crawler/nike_database.db'
+db_path = '{}discord/data/nike_database.db'.format(os.path.abspath(os.path.dirname(__file__)).split('discord')[0])
+print(db_path)
 database = sqlite3.connect(db_path)
 cursor = database.cursor()
 try:
