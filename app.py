@@ -7,8 +7,8 @@ from multiprocessing import Process, Queue
 from twisted.internet import reactor
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.log import configure_logging
-from crawler.crawler.spiders.nike_feed_spider import NikeSpiderFeed
-from crawler.crawler.spiders.nike_calendario_spider import NikeSpiderCalendar
+from crawler.crawler.spiders.nike_snkrs_spider import NikeSnkrsSpider
+from crawler.crawler.spiders.nike_novidades_spider import NikeNovidadesSpider
 from discord.ext import tasks
 
 print("app.py")
@@ -27,8 +27,8 @@ def run_spider():
         try:
             configure_logging()
             runner = crawler.CrawlerRunner()
-            runner.crawl(NikeSpiderFeed)
-            runner.crawl(NikeSpiderCalendar)
+            runner.crawl(NikeSnkrsSpider)
+            runner.crawl(NikeNovidadesSpider)
             deferred = runner.join()
             deferred.addBoth(lambda _: reactor.stop())
             reactor.run()
@@ -68,7 +68,7 @@ class MyClient(discord.Client):
         run_spider()
         rows = [[str(row[0]).strip(),str(row[1]).strip()]  for row in cursor.execute('SELECT name, send FROM products where send<>"avisado" and status="aviseme"')]
         for row in rows:
-            await channel.send("Novo item adicionado em 'avise-me' : {} - {}".format(row[0], row[1]))
+            await channel.send("Novo item adicionado em 'avise-me' : {} - {}".format(row[0]))
             cursor.execute("update products set send='avisado' where name='"+row[0]+"'")
             database.commit()
 

@@ -1,7 +1,7 @@
 import scrapy
 
-class NikeSpiderCalendar(scrapy.Spider):
-    name = "nike_calendario"
+class NikeNovidadesSpider(scrapy.Spider):
+    name = "nike_novidades"
 
     def start_requests(self):
         urls = [
