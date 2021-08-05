@@ -11,7 +11,10 @@ from crawler.crawler.spiders.nike_feed_spider import NikeSpiderFeed
 from crawler.crawler.spiders.nike_calendario_spider import NikeSpiderCalendar
 from discord.ext import tasks
 
-db_path = '{}discord/data/nike_database.db'.format(os.path.abspath(os.path.dirname(__file__)).split('discord')[0])
+print(os.path.abspath(os.path.dirname(__file__)))
+db_path = '{}crawler/data/nike_database.db'.format(os.path.abspath(os.path.dirname(__file__)).split('crawler/crawler')[0])
+print(db_path)
+
 database = sqlite3.connect(db_path)
 cursor = database.cursor()
 
