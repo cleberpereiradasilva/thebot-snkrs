@@ -2,6 +2,7 @@ import scrapy
 import sqlite3
 import os
 
+print("nike_feed")
 print(os.path.abspath(os.path.dirname(__file__)))
 db_path = '{}data/nike_database.db'.format(os.path.abspath(os.path.dirname(__file__)).split('crawler/crawler')[0])
 print(db_path)
