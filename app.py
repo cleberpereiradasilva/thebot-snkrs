@@ -1,16 +1,33 @@
+from discord.ext import tasks
+
 import discord
-from discord.ext import commands
-import random
 
+class MyClient(discord.Client):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-client = commands.Bot(command_prefix = ">", case_sensitive = True)
+        # an attribute we can access from our task
+        self.counter = 0
 
-@client.event
-async def on_ready():
-    print("Entramos {0.user}".format(client))
+        # start the task to run in the background
+        self.my_background_task.start()
 
-@client.command()
-async def numero(ctx):
-    await ctx.send('{}'.format(str(random.randint(1,10))))
+    async def on_ready(self):
+        print('Logged in as')
+        print(self.user.name)
+        print(self.user.id)
+        print('------')
 
-client.run('ODcyMTMxNjcwMTcyNjQzMzkw.YQlZ6Q.zA0cQSXd3-o1lE47Ni-o3r692_Q')
+    @tasks.loop(seconds=60) # task runs every 60 seconds
+    async def my_background_task(self):
+        channel = self.get_channel(872134293869166622) # channel ID goes here
+        self.counter += 1
+        await channel.send(self.counter)
+
+    @my_background_task.before_loop
+    async def before_my_task(self):
+        await self.wait_until_ready() # wait until the bot logs in
+
+client = MyClient()
+
+client.run('ODcyMTMxNjcwMTcyNjQzMzkw.YQlZ6Q.ct63ztrBdFVJeknttl1cuQAvu1Q')

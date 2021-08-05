@@ -1,0 +1,10 @@
+✔ instalar o scrapy @done (05/08/2021 00:45:50)
+✔ montar helper com o primeiro get<headers + get> @done (05/08/2021 00:45:55)
+☐ rodar mais de um spider
+--------------------------------------------------------
+☐ varrer uma categoria
+☐ escolher um banco de dados
+☐ criar os metodos de crud
+☐ salvar uma categoria inteira
+☐ fazer teste de novos itens no site(removendo do banco)
+☐ enviar novos itens para o canal padrao(cmd até o momento)
