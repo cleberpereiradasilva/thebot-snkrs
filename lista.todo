@@ -1,10 +1,14 @@
 ✔ instalar o scrapy @done (05/08/2021 00:45:50)
 ✔ montar helper com o primeiro get<headers + get> @done (05/08/2021 00:45:55)
-☐ rodar mais de um spider
+✔ rodar mais de um spider @done (05/08/2021 01:26:35)
 --------------------------------------------------------
-☐ varrer uma categoria
-☐ escolher um banco de dados
-☐ criar os metodos de crud
-☐ salvar uma categoria inteira
-☐ fazer teste de novos itens no site(removendo do banco)
-☐ enviar novos itens para o canal padrao(cmd até o momento)
+✔ varrer uma categoria @done (05/08/2021 03:20:58)
+✔ escolher um banco de dados @done (05/08/2021 02:08:12)
+✔ criar os metodos de crud @done (05/08/2021 03:21:07)
+✔ salvar uma categoria inteira @done (05/08/2021 03:21:01)
+✔ fazer teste de novos itens no site(removendo do banco) @done (05/08/2021 03:21:15)
+✔ enviar novos itens para o canal padrao(cmd até o momento) @done (05/08/2021 03:59:08)
+--------------------------------------------------------
+☐ rodar no heroku como está agora
+☐ organizar os canais
+☐ refatorar(configs etc...)

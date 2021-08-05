@@ -12,5 +12,8 @@ class NikeSpiderCalendar(scrapy.Spider):
 
     def parse(self, response):
         comprar = response.xpath('//div[@id="calendario"]//div[contains(@class,"produto produto--")]')        
+        print("================================================================")
+        print("================================================================")
         print(len(comprar))
+        print("================================================================")
         
