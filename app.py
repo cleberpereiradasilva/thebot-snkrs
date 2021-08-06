@@ -22,7 +22,7 @@ cursor = database.cursor()
 
 
 
-def run_spider():
+async def run_spider():
     def f(q):
         try:
             configure_logging()
@@ -50,27 +50,160 @@ class MyClient(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # an attribute we can access from our task
-        self.counter = 0
 
         # start the task to run in the background
         self.my_background_task.start()
 
     async def on_ready(self):
-        channel = self.get_channel(872725671858827304)
-        await channel.send("Logado...")
+        print('Logado...')
 
 
-    @tasks.loop(seconds=15) # task runs every 15 seconds
-    async def my_background_task(self):
-        channel = self.get_channel(872725671858827304) # channel ID goes here
-        self.counter += 1                
-        run_spider()
-        rows = [[str(row[0]).strip(),str(row[1]).strip()]  for row in cursor.execute('SELECT name, send FROM products where send<>"avisado" and status="aviseme"')]
-        for row in rows:
-            await channel.send("Novo item adicionado em 'avise-me' : {} - {}".format(row[0]))
-            cursor.execute("update products set send='avisado' where name='"+row[0]+"'")
-            database.commit()
+    @tasks.loop(seconds=180) # task runs every 15 seconds
+    async def my_background_task(self):        
+        channels = [{
+            'spider': 'nike_snkrs',
+            'id': 872973958444626041,
+            'tab':'Calendario',
+            'status': 'aviseme',
+            'mensagem' : {
+                'inserido': 'Novo produto inserido no calendário[Avise-me]',
+                'removido': 'Produto removido do calendário[Avise-me]'
+                }
+            },
+            {
+            'spider': 'nike_snkrs',
+            'id': 872973958444626041,
+            'tab':'Calendario',
+            'status': 'comprar',
+            'mensagem' : {
+                'inserido': 'Novo produto inserido no calendário[Comprar]',
+                'removido': 'Produto removido do calendário[Comprar]'
+                }
+            },
+            {
+            'spider': 'nike_snkrs',
+            'id': 872973958444626041,
+            'tab':'Calendario',
+            'status': 'esgotado',
+            'mensagem' : {
+                'inserido': 'Novo produto inserido no calendário[Esgotado]',
+                'removido': 'Produto removido do calendário[Esgotado]'
+                }
+            },
+            {
+            'spider': 'nike_snkrs',
+            'id': 872725671858827304,                  
+            'tab':'Feed',
+            'status': 'aviseme',
+            'mensagem' : {
+                'inserido': 'Novo produto inserido no reestoque[Avise-me]',
+                'removido': 'Produto removido do reestoque[Avise-me]'
+                }
+            },
+            {
+            'spider': 'nike_snkrs',
+            'id': 872725671858827304,
+            'tab':'Feed',
+            'status': 'comprar',
+            'mensagem' : {
+                'inserido': 'Novo produto inserido no reestoque[Comprar]',
+                'removido': 'Produto removido do reestoque[Comprar]'
+                }
+            },
+            {
+            'spider': 'nike_snkrs',
+            'id': 872725671858827304,
+            'tab':'Feed',
+            'status': 'esgotado',
+            'mensagem' : {
+                'inserido': 'Novo produto inserido no reestoque[Esgotado]',
+                'removido': 'Produto removido do reestoque[Esgotado]'
+                }
+            },
+            {
+            'spider': 'nike_snkrs',
+            'id': 872973807671996476,
+            'tab':'Feed',
+            'status': 'aviseme',
+            'mensagem' : {
+                'inserido': 'Novo produto inserido no estoque[Avise-me]',
+                'removido': 'Produto removido do estoque[Avise-me]'
+                }
+            },
+            {
+            'spider': 'nike_snkrs',
+            'id': 872973807671996476,
+            'tab':'Feed',
+            'status': 'comprar',
+            'mensagem' : {
+                'inserido': 'Novo produto inserido no estoque[Comprar]',
+                'removido': 'Produto removido do estoque[Comprar]'
+                }
+            },
+            {
+            'spider': 'nike_snkrs',
+            'id': 872973807671996476,
+            'tab':'Feed',
+            'status': 'esgotado',
+            'mensagem' : {
+                'inserido': 'Novo produto inserido no estoque[Esgotado]',
+                'removido': 'Produto removido do estoque[Esgotado]'
+                }
+            },
+            {
+            'spider': 'nike_novidades',
+            'id': 872971373859983390,
+            'tab': 'Feminino',
+            'status': 'Em breve',
+            'mensagem' : {
+                'inserido': '"Em breve" produto inserido na página[Feminino]',
+                'removido': 'Produto removido de "Em breve"[Feminino]'
+                }
+            },
+            {
+            'spider': 'nike_novidades',
+            'id': 872971373859983390,
+            'tab': 'Feminino',
+            'status': 'Comprar',
+            'mensagem' : {
+                'inserido': 'Novo produto disponível para comprar inserido na página[Feminino]',
+                'removido': 'Produto removido de "Comprar"[Feminino]'
+                }
+            },
+            {
+            'spider': 'nike_novidades',
+            'id': 872971373859983390,
+            'tab': 'Masculino',
+            'status': 'Em breve',
+            'mensagem' : {
+                'inserido': '"Em breve" produto inserido na página[Masculino]',
+                'removido': 'Produto removido de "Em breve"[Masculino]'
+                }
+            },
+            {
+            'spider': 'nike_novidades',
+            'id': 872971373859983390,
+            'tab': 'Masculino',
+            'status': 'Comprar',
+            'mensagem' : {
+                'inserido': 'Novo produto disponível para comprar inserido na página[Masculino]',
+                'removido': 'Produto removido de "Comprar"[Masculino]'
+                }
+            }
+        ]
+        await run_spider()
+        # for channel in channels:
+        #     send_to = self.get_channel(channel['id'])
+        #     query = 'SELECT name, url, id FROM products where send="avisar" and status="{}"  and spider="{}" and tab="{}"'.format(channel['status'],channel['spider'],channel['tab'])
+            
+
+        #     rows = [[str(row[0]).strip(),str(row[1]).strip(), str(row[2]).strip()]  for row in cursor.execute(query)]            
+        #     for row in rows:
+        #         print('Enviando mensagem para channel {}'.format(channel['id']))
+        #         #await send_to.send("{}:\n {}\n{}".format(channel['mensagem']['inserido'], row[0], row[1]))
+        #         print("update products set send='avisado' where id='"+row[2]+"'")
+        #         cursor.execute("update products set send='avisado' where id='"+row[2]+"'")
+        #         database.commit()
 
         
         
@@ -81,4 +214,4 @@ class MyClient(discord.Client):
 
 client = MyClient()
 
-client.run('ODcyMTMxNjcwMTcyNjQzMzkw.YQlZ6Q.ct63ztrBdFVJeknttl1cuQAvu1Q')
+client.run('ODcyMTMxNjcwMTcyNjQzMzkw.YQlZ6Q.jFepmzwgmN4iFy-nh5p0qX_gQJU')

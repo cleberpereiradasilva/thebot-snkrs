@@ -11,7 +11,7 @@ database = sqlite3.connect(db_path)
 cursor = database.cursor()
 try:
     cursor.execute('''CREATE TABLE products
-               (date text, url text, name text, tab text, status text, send text)''')
+               (date text, spider text, id text, url text, name text, tab text, status text, send text)''')
     database.commit()
 except:
     pass
@@ -19,7 +19,7 @@ except:
 
 class NikeSnkrsSpider(scrapy.Spider):
     name = "nike_snkrs"
-    encontrados = {}
+    encontrados = {}   
 
     def start_requests(self):       
         urls = [
@@ -50,7 +50,7 @@ class NikeSnkrsSpider(scrapy.Spider):
                 finish = False
 
             #pega todos os nomes da tabela, apenas os nomes    
-            rows = [str(row[0]).strip() for row in cursor.execute('SELECT url FROM products where tab="'+tab+'" and status="'+situacao+'"')]
+            rows = [str(row[0]).strip() for row in cursor.execute('SELECT id FROM products where spider="'+self.name+'" and tab="'+tab+'" and status="'+situacao+'"')]
 
             #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
             for content in items:  
@@ -58,9 +58,8 @@ class NikeSnkrsSpider(scrapy.Spider):
                 prod_url = content.xpath('.//a/@href').get()
 
                 self.add_name(tab, prod_url)
-                if len( [url for url in rows if url == prod_url]) == 0:
-                    print('Inserir ', name)
-                    cursor.execute("insert into products values (?, ?, ?, ?, ?, ?)", (datetime.now().strftime('%Y-%m-%d %H:%M'), prod_url, name, tab, situacao, 'avisar'))
+                if len( [url for url in rows if url == prod_url]) == 0:                   
+                    cursor.execute("insert into products values (?, ?, ?, ?, ?, ?, ?, ?)", (datetime.now().strftime('%Y-%m-%d %H:%M'), self.name, prod_url, prod_url, name, tab, situacao, 'avisar'))
 
             
         database.commit()
@@ -71,14 +70,13 @@ class NikeSnkrsSpider(scrapy.Spider):
             url = '{}&p={}'.format(part, str(page))
             yield scrapy.Request(url=url, callback=self.parse)
         else:
-            rows = [[str(row[0]).strip(),str(row[1]).strip()] for row in cursor.execute('SELECT url,status FROM products where tab="'+tab+'" and status="'+situacao+'"')]
+            rows = [[str(row[0]).strip(),str(row[1]).strip()] for row in cursor.execute('SELECT id,status FROM products where spider="'+self.name+'" and tab="'+tab+'" and status="'+situacao+'"')]
             
 
             #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
             for row in rows:                    
-                if len( [url for url in self.encontrados[tab] if row[0] == url and row[1] == situacao]) == 0 :
-                    print('Remover ', row[0], tab)                   
-                    cursor.execute('update products set send="remover" where tab="'+tab+'" and status="'+situacao+'" and url="'+row[0]+'"')
+                if len( [url for url in self.encontrados[tab] if row[0] == url and row[1] == situacao]) == 0 :                                     
+                    cursor.execute('update products set send="remover" where spider="'+self.name+'" and tab="'+tab+'" and status="'+situacao+'" and id="'+row[0]+'"')
                     database.commit()
 
         

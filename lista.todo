@@ -10,7 +10,8 @@
 ✔ enviar novos itens para o canal padrao(cmd até o momento) @done (05/08/2021 03:59:08)
 --------------------------------------------------------
 ✔ rodar no heroku como está agora @done (05/08/2021 13:58:10)
-☐ paginar urls
+✔ paginar urls @done (05/08/2021 18:00:41)
+✔ fazer as paginas de novidades @done (05/08/2021 19:38:57)
 ☐ centralizar database
-☐ organizar os canais
+✔ organizar os canais @done (05/08/2021 22:54:58)
 ☐ refatorar(configs etc...)
