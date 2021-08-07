@@ -17,15 +17,14 @@ except:
     pass
 
 
-class ArtwalkSnkrsSpider(scrapy.Spider):
-    name = "artwalk_snkrs"
+class MagicfeetSnkrsSpider(scrapy.Spider):
+    name = "magicfeet_snkrs"
     encontrados = {}   
 
     def start_requests(self):       
         urls = [
-            'https://www.artwalk.com.br/nike-air-max?O=OrderByPriceASC&PS=24',
-            'https://www.artwalk.com.br/nike-air-force?O=OrderByPriceASC&PS=24',
-            'https://www.artwalk.com.br/T%C3%AAnis/Jordan?O=OrderByReleaseDateDESC&&PS=24&map=specificationFilter_16,specificationFilter_15',
+            'https://www.magicfeet.com.br/nike?O=OrderByReleaseDateDESC#2',  
+            'https://www.magicfeet.com.br/jordan-brand?O=OrderByReleaseDateDESC',
         ]
         for url in urls:
             yield scrapy.Request(url=url, callback=self.extract_sl)  
@@ -41,25 +40,22 @@ class ArtwalkSnkrsSpider(scrapy.Spider):
         scripts = response.xpath('//script/text()').getall()
         for script in scripts:
             if '&sl=' in script:
-                url='https://www.artwalk.com.br{}1'.format(script.split('load(\'')[1].split('\'')[0])               
+                url='https://www.magicfeet.com.br{}1'.format(script.split('load(\'')[1].split('\'')[0])                               
                 yield scrapy.Request(url=url, callback=self.parse)  
 
 
 
     def parse(self, response):       
         finish  = True                
-        if 'Air+Max' in response.url :
-            tab = 'air-max' 
-            categoria = 'restock'
-        elif 'air-force' in response.url: 
-            tab = 'air-force' 
-            categoria = 'restock'
-        elif 'Jordan' in response.url:
-            tab = 'air-jordan' 
-            categoria = 'restock'       
+        if '3a2000008&' in response.url :
+            tab = 'nike'             
+        elif '3a2000030' in response.url: 
+            tab = 'jordan'             
+
+        categoria = 'restock'       
         
         #pega todos os ites da pagina, apenas os nomes dos tenis
-        items = [ name for name in response.xpath('//div[@class="product-item-container"]') ]
+        items = [ name for name in response.xpath('//div[@class="shelf-item"]') ]
 
         if(len(items) > 0 ):
             finish = False
@@ -69,10 +65,9 @@ class ArtwalkSnkrsSpider(scrapy.Spider):
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
         for item in items:  
-            name = item.xpath('.//h3//text()').get()
-            prod_url = item.xpath('.//a/@href').get()
-            codigo_parts = prod_url.split('-')            
-            codigo = 'ID{}$'.format(''.join(codigo_parts[-3:]))
+            name = item.xpath('.//h3//a/@title').get()
+            prod_url = item.xpath('.//a/@href').get()            
+            codigo = 'ID{}$'.format(item.xpath('./@data-product-id').get())
 
             self.add_name(tab, str(codigo))
             if len( [id for id in rows if str(id) == str(codigo)]) == 0:                

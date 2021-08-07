@@ -1,4 +1,4 @@
-☐ https://gdlp.com.br/
+
 
 ✔ instalar o scrapy @done (05/08/2021 00:45:50)
 ✔ montar helper com o primeiro get<headers + get> @done (05/08/2021 00:45:55)
@@ -28,7 +28,6 @@
 ✘ pegar detalhes das compras(tamanho, cor etc...) @cancelled (06/08/2021 15:00:34)
 --------------------------------------------------------
 
-
 ✔ https://www.artwalk.com.br/ @done (06/08/2021 23:20:36)
 ✔ restock @done (06/08/2021 23:20:16)
     ✔ https://www.artwalk.com.br/T%C3%AAnis/Jordan?O=OrderByReleaseDateDESC&&PS=24&map=specificationFilter_16,specificationFilter_15 @done (06/08/2021 22:47:41)
@@ -37,11 +36,16 @@
     ✔ https://www.artwalk.com.br/calendario-sneaker @done (06/08/2021 23:20:03)
 ✔ https://www.artwalk.com.br/novidades?PS=24&O=OrderByReleaseDateDESC @done (06/08/2021 23:20:02)
 
-
 ✔ https://www.maze.com.br/ @done (07/08/2021 01:04:22)
     ✔ snikers @done (07/08/2021 01:03:49)
     ✔ novidades @done (07/08/2021 01:03:50)
-    ☐ 
+    
+✔ https://gdlp.com.br/ @done (07/08/2021 03:06:35)
+
+✔ magicfeet @done (07/08/2021 03:06:59)
+    ✔ jordan https://www.magicfeet.com.br/buscapagina?fq=B%3a2000030&O=OrderByReleaseDateDESC&PS=24&sl=a7f7a784-af47-4579-b2d9-d67a557ae307&cc=24&sm=0&PageNumber=2 @done (07/08/2021 03:06:29)
+    ✔ nike   https://www.magicfeet.com.br/buscapagina?fq=B%3a2000008&O=OrderByReleaseDateDESC&PS=24&sl=a7f7a784-af47-4579-b2d9-d67a557ae307&cc=24&sm=0&PageNumber=2 @done (07/08/2021 03:06:31)
+
 
 ☐ refatorar(configs etc...)
 ☐ centralizar database

@@ -17,18 +17,16 @@ except:
     pass
 
 
-class ArtwalkSnkrsSpider(scrapy.Spider):
-    name = "artwalk_snkrs"
+class GdlpNovidadesSpider(scrapy.Spider):
+    name = "gdlp_novidades"
     encontrados = {}   
 
     def start_requests(self):       
-        urls = [
-            'https://www.artwalk.com.br/nike-air-max?O=OrderByPriceASC&PS=24',
-            'https://www.artwalk.com.br/nike-air-force?O=OrderByPriceASC&PS=24',
-            'https://www.artwalk.com.br/T%C3%AAnis/Jordan?O=OrderByReleaseDateDESC&&PS=24&map=specificationFilter_16,specificationFilter_15',
+        urls = [            
+            'https://gdlp.com.br/lancamentos',            
         ]
         for url in urls:
-            yield scrapy.Request(url=url, callback=self.extract_sl)  
+            yield scrapy.Request(url=url, callback=self.parse)  
 
 
     def add_name(self, tab, name):
@@ -37,55 +35,38 @@ class ArtwalkSnkrsSpider(scrapy.Spider):
         else:
             self.encontrados[tab] = [name]
 
-    def extract_sl(self, response):
-        scripts = response.xpath('//script/text()').getall()
-        for script in scripts:
-            if '&sl=' in script:
-                url='https://www.artwalk.com.br{}1'.format(script.split('load(\'')[1].split('\'')[0])               
-                yield scrapy.Request(url=url, callback=self.parse)  
-
-
 
     def parse(self, response):       
-        finish  = True                
-        if 'Air+Max' in response.url :
-            tab = 'air-max' 
-            categoria = 'restock'
-        elif 'air-force' in response.url: 
-            tab = 'air-force' 
-            categoria = 'restock'
-        elif 'Jordan' in response.url:
-            tab = 'air-jordan' 
-            categoria = 'restock'       
-        
+        finish  = True
+        tab = 'lancamentos'       
+        categoria = 'novidades' 
         #pega todos os ites da pagina, apenas os nomes dos tenis
-        items = [ name for name in response.xpath('//div[@class="product-item-container"]') ]
-
+        items = [ name for name in response.xpath('//li[@class="item last"]') ]
         if(len(items) > 0 ):
             finish = False
-
+        
         #pega todos os nomes da tabela, apenas os nomes    
         rows = [str(row[0]).strip() for row in cursor.execute('SELECT id FROM products where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'"')]
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
         for item in items:  
-            name = item.xpath('.//h3//text()').get()
+            name = item.xpath('.//h2//a/text()').get()
             prod_url = item.xpath('.//a/@href').get()
-            codigo_parts = prod_url.split('-')            
-            codigo = 'ID{}$'.format(''.join(codigo_parts[-3:]))
+            codigo = 'ID{}$'.format(prod_url.split('/')[-1])
 
             self.add_name(tab, str(codigo))
             if len( [id for id in rows if str(id) == str(codigo)]) == 0:                
                 cursor.execute("insert into products values (?, ?, ?, ?, ?, ?, ?, ?)", (datetime.now().strftime('%Y-%m-%d %H:%M'), self.name, codigo, prod_url, name, categoria, tab, 'avisar'))
+                
 
         
         database.commit()
         if(finish == False):
-            uri = response.url.split('&PageNumber=')
-            part = uri[0]
-            page = int(uri[1]) + 1
-            url = '{}&PageNumber={}'.format(part, str(page))
-            yield scrapy.Request(url=url, callback=self.parse)
+            paginacao = response.xpath('//div[@class="pages"]//li')
+            if len(paginacao) > 0:
+                url = response.xpath('//div[@class="pages"]//a[@class="next i-next"]/@href').get()
+                if url:                
+                    yield scrapy.Request(url=url, callback=self.parse)
         else:
             #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
             rows = [str(row[0]).strip() for row in cursor.execute('SELECT id FROM products where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'"')]                        
