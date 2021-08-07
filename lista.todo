@@ -1,7 +1,3 @@
-✔ https://www.nike.com.br/ @done (06/08/2021 21:33:46)
-✔ https://www.artwalk.com.br/ @done (06/08/2021 23:20:40)    
-
-☐ https://www.maze.com.br/
 ☐ https://gdlp.com.br/
 
 ✔ instalar o scrapy @done (05/08/2021 00:45:50)
@@ -42,6 +38,10 @@
 ✔ https://www.artwalk.com.br/novidades?PS=24&O=OrderByReleaseDateDESC @done (06/08/2021 23:20:02)
 
 
+✔ https://www.maze.com.br/ @done (07/08/2021 01:04:22)
+    ✔ snikers @done (07/08/2021 01:03:49)
+    ✔ novidades @done (07/08/2021 01:03:50)
+    ☐ 
 
 ☐ refatorar(configs etc...)
 ☐ centralizar database
