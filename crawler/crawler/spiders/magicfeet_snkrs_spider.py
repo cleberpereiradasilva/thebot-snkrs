@@ -46,7 +46,8 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
 
 
     def parse(self, response):       
-        finish  = True                
+        finish  = True   
+        tab=""             
         if '3a2000008&' in response.url :
             tab = 'nike'             
         elif '3a2000030' in response.url: 

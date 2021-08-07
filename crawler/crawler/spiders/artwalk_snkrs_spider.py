@@ -48,6 +48,8 @@ class ArtwalkSnkrsSpider(scrapy.Spider):
 
     def parse(self, response):       
         finish  = True                
+        categoria=""
+        tab=""
         if 'Air+Max' in response.url :
             tab = 'air-max' 
             categoria = 'restock'

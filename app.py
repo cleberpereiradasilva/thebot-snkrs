@@ -145,7 +145,7 @@ class MyClient(discord.Client):
                     
         ]
 
-        spiders = [
+        spiders_db = [
             'artwalk_calendario',
             'artwalk_novidades',
             'artwalk_snkrs',
@@ -158,18 +158,18 @@ class MyClient(discord.Client):
             'nike_novidades',
             'nike_snkrs',
         ]
-
+        send_to = self.get_channel(873450794404425779)
+        await send_to.send('Ferificacao inicializada')
         tic = time.clock()
-        for spider in spiders:
-            await run_spider(spider)
+        for spider in spiders:            
+            await run_spider(spider)            
 
             if self.created == False:
                 cursor.execute("update products set send='avisado'")
                 database.commit()  
 
             if self.created:           
-                for spider in spiders:
-                    send_to = self.get_channel(873450794404425779)
+                for spider in spiders_db:                    
                     query = 'SELECT name, url, id FROM products where send="avisar" and spider="{}"'.format(spider)
 
                     rows = [[str(row[0]).strip(),str(row[1]).strip(), str(row[2]).strip()]  for row in cursor.execute(query)]            
@@ -190,6 +190,7 @@ class MyClient(discord.Client):
             #             await send_to.send("{}:\n {}\n{}".format(channel['mensagem'], row[0], row[1]))                        
             #             cursor.execute("update products set send='avisado' where id='"+row[2]+"'")
             #             database.commit()
+        await send_to.send('Ferificacao finalizada') 
         toc = time.clock()
         now = toc - tic
         print("")
