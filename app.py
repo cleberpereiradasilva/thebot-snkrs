@@ -1,7 +1,6 @@
 import discord
 import scrapy
 import os
-import time
 import scrapy.crawler as crawler
 import sqlite3
 from multiprocessing import Process, Queue
@@ -159,8 +158,7 @@ class MyClient(discord.Client):
             'nike_snkrs',
         ]
         send_to = self.get_channel(873450794404425779)
-        await send_to.send('Ferificacao inicializada')
-        tic = time.clock()
+        await send_to.send('Ferificacao inicializada')        
         for spider in spiders:            
             await run_spider(spider)            
 
@@ -191,14 +189,7 @@ class MyClient(discord.Client):
             #             cursor.execute("update products set send='avisado' where id='"+row[2]+"'")
             #             database.commit()
         await send_to.send('Ferificacao finalizada') 
-        toc = time.clock()
-        now = toc - tic
-        print("")
-        print('================================================================')
-        print('{}s'.format(now))
-        print("")
-        print("")
-        print("")
+        
         self.created = True
         
         

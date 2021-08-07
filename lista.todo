@@ -47,6 +47,17 @@
     ✔ nike   https://www.magicfeet.com.br/buscapagina?fq=B%3a2000008&O=OrderByReleaseDateDESC&PS=24&sl=a7f7a784-af47-4579-b2d9-d67a557ae307&cc=24&sm=0&PageNumber=2 @done (07/08/2021 03:06:31)
 
 
+☐ Fazer mapa dos links e seus grupos
+☐ Deixar rodando no heroku para testar
+☐ Criar os canais para já direcionar as mensagens corretamente
+☐ Checar se está pegando algum 'Em breve'
+☐ Colocar mais detalhes dos produtos nas mensagens
+
+
+
+
+
+
 ☐ refatorar(configs etc...)
 ☐ centralizar database
 
