@@ -17,16 +17,18 @@ except:
     pass
 
 
-class NikeSnkrsSpider(scrapy.Spider):
-    name = "nike_snkrs"
+class ArtwakerSnkrsSpider(scrapy.Spider):
+    name = "artwalk_snkrs"
     encontrados = {}   
 
     def start_requests(self):       
-        urls = [            
-            'https://www.nike.com.br/Snkrs/Estoque?demanda=true&p=1',            
+        urls = [
+            'https://www.artwalk.com.br/nike-air-max?O=OrderByPriceASC&PS=24',
+            'https://www.artwalk.com.br/nike-air-force?O=OrderByPriceASC&PS=24',
+            'https://www.artwalk.com.br/T%C3%AAnis/Jordan?O=OrderByReleaseDateDESC&&PS=24&map=specificationFilter_16,specificationFilter_15',
         ]
         for url in urls:
-            yield scrapy.Request(url=url, callback=self.parse)  
+            yield scrapy.Request(url=url, callback=self.extract_sl)  
 
 
     def add_name(self, tab, name):
@@ -35,13 +37,30 @@ class NikeSnkrsSpider(scrapy.Spider):
         else:
             self.encontrados[tab] = [name]
 
+    def extract_sl(self, response):
+        scripts = response.xpath('//script/text()').getall()
+        for script in scripts:
+            if '&sl=' in script:
+                url='https://www.artwalk.com.br{}1'.format(script.split('load(\'')[1].split('\'')[0])               
+                yield scrapy.Request(url=url, callback=self.parse)  
+
+
 
     def parse(self, response):       
-        finish  = True
-        tab = response.url.replace('?','/').split('/')[4]  
-        categoria = 'restock' if tab == 'Estoque' else 'nov-calcados'
+        finish  = True                
+        if 'Air+Max' in response.url :
+            tab = 'air-max' 
+            categoria = 'restock'
+        elif 'air-force' in response.url: 
+            tab = 'air-force' 
+            categoria = 'restock'
+        elif 'Jordan' in response.url:
+            tab = 'air-jordan' 
+            categoria = 'restock'       
+        
         #pega todos os ites da pagina, apenas os nomes dos tenis
-        items = [ name for name in response.xpath('//div[contains(@class,"produto produto--")]') ]
+        items = [ name for name in response.xpath('//div[@class="product-item-container"]') ]
+
         if(len(items) > 0 ):
             finish = False
 
@@ -50,23 +69,22 @@ class NikeSnkrsSpider(scrapy.Spider):
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
         for item in items:  
-            name = item.xpath('.//h2//span/text()').get()
+            name = item.xpath('.//h3//text()').get()
             prod_url = item.xpath('.//a/@href').get()
-            codigo = 'ID{}$'.format(item.xpath('.//a/img/@alt').get().split(".")[-1].strip())
-            
+            codigo_parts = prod_url.split('-')            
+            codigo = 'ID{}$'.format(''.join(codigo_parts[-3:]))
 
             self.add_name(tab, str(codigo))
             if len( [id for id in rows if str(id) == str(codigo)]) == 0:                
                 cursor.execute("insert into products values (?, ?, ?, ?, ?, ?, ?, ?)", (datetime.now().strftime('%Y-%m-%d %H:%M'), self.name, codigo, prod_url, name, categoria, tab, 'avisar'))
-                
 
         
         database.commit()
         if(finish == False):
-            uri = response.url.split('&p=')
+            uri = response.url.split('&PageNumber=')
             part = uri[0]
             page = int(uri[1]) + 1
-            url = '{}&p={}'.format(part, str(page))
+            url = '{}&PageNumber={}'.format(part, str(page))
             yield scrapy.Request(url=url, callback=self.parse)
         else:
             #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            

@@ -12,7 +12,7 @@ database = sqlite3.connect(db_path)
 cursor = database.cursor()
 try:
     cursor.execute('''CREATE TABLE products
-               (date text, spider text, id text, url text, name text, tab text, status text, send text)''')
+               (date text, spider text, id text, url text, name text, categoria text, tab text, send text)''')
     database.commit()
 except:
     pass
@@ -21,48 +21,51 @@ class NikeNovidadesSpider(scrapy.Spider):
     name = "nike_novidades"    
     encontrados = {}
 
+
     def start_requests(self):
         urls = [
-            'https://www.nike.com.br/lancamento-fem-26?demanda=true&p=1',
-            'https://www.nike.com.br/lancamento-masc-28?demanda=true&p=1',            
+            'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',
+            'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',
+
+            'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',
+            'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',
+
+            'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',
+            'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',
         ]
         for url in urls:
             yield scrapy.Request(url=url, callback=self.parse)
 
-    def add_name(self, tab, id, situacao):
+    def add_name(self, tab, id):
         if tab in  self.encontrados:
-            self.encontrados[tab].append({
-                'id': id,
-                'situacao': situacao
-             })
+            self.encontrados[tab].append(id)
         else:
-            self.encontrados[tab] = [{
-                'id': id,
-                'situacao': situacao
-             }]
+            self.encontrados[tab] = [id]
 
     def parse(self, response):
         items = response.xpath('//div[@data-codigo]')  
         finish  = True
         tab = 'Feminino' if 'fem' in response.url else 'Masculino'
+        categoria = 'nov-calcados' if 'Calcados' in response.url else 'nov-roupas' if 'Roupas' in response.url else 'nov-acessorios'
         if(len(items) > 0 ):
-            finish = False
-        for item in items:            
-            codigo = item.xpath('./@data-codigo').get()                 
+            finish = False           
+
+        for item in items:                      
+            codigo = 'ID{}$'.format(item.xpath('./@data-codigo').get().strip())            
             name = item.xpath('.//a[@class="produto__nome"]/text()').get()
-            prod_url = item.xpath('.//a/@href').get()
-            situacao = 'Comprar' if item.xpath('.//a//div[contains(@style,"display:none")]/text()').get() == None else 'Em breve'
-            
-            #pega todos os nomes da tabela, apenas os nomes    
-            rows = [str(row[0]).strip() for row in cursor.execute('SELECT id FROM products where spider="'+self.name+'" and tab="'+tab+'" and status="'+situacao+'"')]
+            prod_url = item.xpath('.//a/@href').get()           
+            comprar = False if item.xpath('.//a//div[contains(@style,"display:none")]/text()').get() == None else True
+            self.add_name(tab, str(codigo))
 
-            #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
-          
-            self.add_name(tab, codigo, situacao)
-            if len( [id for id in rows if id == codigo]) == 0:                   
-                cursor.execute("insert into products values (?, ?, ?, ?, ?, ?, ?, ?)", (datetime.now().strftime('%Y-%m-%d %H:%M'), self.name, codigo, prod_url, name, tab, situacao, 'avisar'))
+            if comprar == True:
+                #pega todos os nomes da tabela, apenas os nomes    
+                rows = [str(row[0]).strip() for row in cursor.execute('SELECT id FROM products where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'"')]
 
-        database.commit()
+                #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar                            
+                if len( [id for id in rows if str(id) == str(codigo)]) == 0:                
+                    cursor.execute("insert into products values (?, ?, ?, ?, ?, ?, ?, ?)", (datetime.now().strftime('%Y-%m-%d %H:%M'), self.name, codigo, prod_url, name, categoria, tab, 'avisar'))                
+
+        database.commit()                       
         if(finish == False):
             uri = response.url.split('&p=')
             part = uri[0]
@@ -70,13 +73,24 @@ class NikeNovidadesSpider(scrapy.Spider):
             url = '{}&p={}'.format(part, str(page))
             yield scrapy.Request(url=url, callback=self.parse)
         else:
-            rows = [[str(row[0]).strip(),str(row[1]).strip()] for row in cursor.execute('SELECT id,status FROM products where spider="'+self.name+'" and tab="'+tab+'"')]
+           #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
+            rows = [str(row[0]).strip() for row in cursor.execute('SELECT id FROM products where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'"')]                        
+            try:
+                v = self.encontrados[tab]
+            except:
+                print("========== Err ============")                
+                print(response.url)
+                print('Total items ', len(items))
+                for k in self.encontrados.keys():
+                    print('{} Total={}'.format(k,len(self.encontrados[k])))
+                print("===========================")
             
-            #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
-            for row in rows:        
-                if len( [data for data in self.encontrados[tab] if row[0] == data['id'] and row[1] == data['situacao']] ) == 0 :                                     
-                    cursor.execute('update products set send="remover" where spider="'+self.name+'" and tab="'+tab+'" and status="'+row[1]+'" and id="'+row[0]+'"')
+            for row in rows:
+                if len( [id for id in self.encontrados[tab] if str(id) == str(row)]) == 0 :                                       
+                    cursor.execute('update products set send="remover" where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" and id="'+row+'"')
                     database.commit()
+                
+           
 
        
         

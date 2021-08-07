@@ -1,3 +1,9 @@
+✔ https://www.nike.com.br/ @done (06/08/2021 21:33:46)
+✔ https://www.artwalk.com.br/ @done (06/08/2021 23:20:40)    
+
+☐ https://www.maze.com.br/
+☐ https://gdlp.com.br/
+
 ✔ instalar o scrapy @done (05/08/2021 00:45:50)
 ✔ montar helper com o primeiro get<headers + get> @done (05/08/2021 00:45:55)
 ✔ rodar mais de um spider @done (05/08/2021 01:26:35)
@@ -12,6 +18,32 @@
 ✔ rodar no heroku como está agora @done (05/08/2021 13:58:10)
 ✔ paginar urls @done (05/08/2021 18:00:41)
 ✔ fazer as paginas de novidades @done (05/08/2021 19:38:57)
-☐ centralizar database
 ✔ organizar os canais @done (05/08/2021 22:54:58)
+--------------------------------------------------------
+✔ retirar o feed @done (06/08/2021 13:02:55)
+✔ canal reestoque -> monitora a aba "em estoque" @done (06/08/2021 13:02:58)
+✔ ignorar 'Em breve' @done (06/08/2021 13:12:57)
+✔ canal "lançamentos tenis" -> monitora lancamento tenis(ignorando 'Em breve') + a aba calendário do snkrs @done (06/08/2021 13:13:00)
+✔ canal "lançamento roupas e acessórios" -> para roupas e acessorios(ignorando 'Em breve') @done (06/08/2021 13:13:01)
+✔ criar primeira rodada com update de enviado para todos @done (06/08/2021 14:00:15)
+✔ colocar em lista os spiders para rodar um por um @done (06/08/2021 14:07:34)
+✔ refatorar dic dos canais @done (06/08/2021 14:09:50)
+✔ resolver bug do 'remover' @done (06/08/2021 20:29:52)
+✘ pegar detalhes das compras(tamanho, cor etc...) @cancelled (06/08/2021 15:00:34)
+--------------------------------------------------------
+
+
+✔ https://www.artwalk.com.br/ @done (06/08/2021 23:20:36)
+✔ restock @done (06/08/2021 23:20:16)
+    ✔ https://www.artwalk.com.br/T%C3%AAnis/Jordan?O=OrderByReleaseDateDESC&&PS=24&map=specificationFilter_16,specificationFilter_15 @done (06/08/2021 22:47:41)
+    ✔ https://www.artwalk.com.br/nike-air-force?O=OrderByPriceASC&PS=24 @done (06/08/2021 22:47:42)
+    ✔ https://www.artwalk.com.br/nike-air-max?O=OrderByPriceASC&PS=24 @done (06/08/2021 22:47:43)    
+    ✔ https://www.artwalk.com.br/calendario-sneaker @done (06/08/2021 23:20:03)
+✔ https://www.artwalk.com.br/novidades?PS=24&O=OrderByReleaseDateDESC @done (06/08/2021 23:20:02)
+
+
+
 ☐ refatorar(configs etc...)
+☐ centralizar database
+
+

@@ -17,13 +17,13 @@ except:
     pass
 
 
-class NikeSnkrsSpider(scrapy.Spider):
-    name = "nike_snkrs"
+class NikeCalendarioSpider(scrapy.Spider):
+    name = "nike_calendario"
     encontrados = {}   
 
     def start_requests(self):       
-        urls = [            
-            'https://www.nike.com.br/Snkrs/Estoque?demanda=true&p=1',            
+        urls = [
+            'https://www.nike.com.br/Snkrs/Calendario?demanda=true&p=1',
         ]
         for url in urls:
             yield scrapy.Request(url=url, callback=self.parse)  
