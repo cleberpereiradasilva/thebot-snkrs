@@ -1,13 +1,35 @@
-# Define your item pipelines here
-#
-# Don't forget to add your pipeline to the ITEM_PIPELINES setting
-# See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-
-
-# useful for handling different item types with a single interface
-from itemadapter import ItemAdapter
-
-
+from scrapy.exceptions import DropItem
+from crawler.items import Inserter, Updater, Deleter
+import logging
+from data.database import Database
 class CrawlerPipeline:
+    def __init__(self):        
+        self.connection = Database()
+
+    def inserir(self, item):
+        self.connection.insert(item)
+        logging.log(logging.WARNING, "Item inserido no database") 
+
+    def atualizar(self, item):             
+        self.connection.update(item)
+        logging.log(logging.WARNING, "Item atualizado no database") 
+
+    def delete(self, item):             
+        self.connection.delete(item)
+        logging.log(logging.WARNING, "Item removido do database") 
+
     def process_item(self, item, spider):
+        valid = True       
+        for data in item:
+            if not data:
+                valid = False              
+                raise DropItem("Missing {0}!".format(data))                
+        if valid:  
+            if isinstance(item, Inserter):  
+                self.inserir(item)                  
+            if isinstance(item, Updater):    
+                self.atualizar(item)     
+            if isinstance(item, Deleter):    
+                self.delete(item)               
         return item
+        

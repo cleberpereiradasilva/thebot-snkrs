@@ -1,37 +1,25 @@
 import scrapy
-import sqlite3
-import os
-from datetime import datetime
 import json
+from datetime import datetime
+from crawler.items import Inserter, Updater, Deleter
+from data.database import Database
 
-print("nike_novidades")
-print(os.path.abspath(os.path.dirname(__file__)))
-db_path = '{}data/nike_database.db'.format(os.path.abspath(os.path.dirname(__file__)).split('crawler/crawler')[0])
-print(db_path)
-database = sqlite3.connect(db_path)
-cursor = database.cursor()
-try:
-    cursor.execute('''CREATE TABLE products
-               (date text, spider text, id text, url text, name text, categoria text, tab text, send text)''')
-    database.commit()
-except:
-    pass
 
 class NikeNovidadesSpider(scrapy.Spider):
     name = "nike_lancamentos"    
     encontrados = {}
-
+    database = Database()
 
     def start_requests(self):
         urls = [
             'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',
-            'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',
+            # 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',
 
-            'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',
-            'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',
+            # 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',
+            # 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',
 
-            'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',
-            'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',
+            # 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',
+            # 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',
         ]
         for url in urls:
             yield scrapy.Request(url=url, callback=self.parse)
@@ -42,8 +30,7 @@ class NikeNovidadesSpider(scrapy.Spider):
         else:
             self.encontrados[tab] = [id]
             
-    def details(self, response):
-        print(response.url)
+    def details(self, response):        
         opcoes_list = []
         images_list = []
         images = response.xpath('//ul[@class="js-thumb-list"]//img/@src').getall()
@@ -57,8 +44,11 @@ class NikeNovidadesSpider(scrapy.Spider):
                 for k in data.keys():
                     opcoes_list.append('{} tamanho {} por {}'.format(data[k]['TemEstoque'],k, data[k]['PrecoPor']))                
 
-        print("|".join(images_list))
-        print("|".join(opcoes_list))
+        record = Updater()        
+        record['prod_url']=response.url 
+        record['imagens']="|".join(images_list) 
+        record['tamanhos']="|".join(opcoes_list) 
+        yield record
 
     def parse(self, response):
         items = response.xpath('//div[@data-codigo]')  
@@ -66,7 +56,15 @@ class NikeNovidadesSpider(scrapy.Spider):
         tab = 'Feminino' if 'fem' in response.url else 'Masculino'
         categoria = 'nov-calcados' if 'Calcados' in response.url else 'nov-roupas' if 'Roupas' in response.url else 'nov-acessorios'
         if(len(items) > 0 ):
-            finish = True           
+            finish = True   
+
+        #pega todos os nomes da tabela, apenas os nomes
+        results = self.database.search(['id'],{
+            'spider':self.name,
+            'categoria':categoria,
+            'tab': tab
+        })        
+        rows = [str(row[0]).strip() for row in results]        
 
         for item in items:                      
             codigo = 'ID{}$'.format(item.xpath('./@data-codigo').get().strip())            
@@ -75,15 +73,21 @@ class NikeNovidadesSpider(scrapy.Spider):
             comprar = False if item.xpath('.//a//div[contains(@style,"display:none")]/text()').get() == None else True
             self.add_name(tab, str(codigo))
 
-            if comprar == True:
-                #pega todos os nomes da tabela, apenas os nomes    
-                rows = [str(row[0]).strip() for row in cursor.execute('SELECT id FROM products where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'"')]
-
+            if comprar == True:                
                 #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar                            
-                if len( [id for id in rows if str(id) == str(codigo)]) == 0:                
-                    cursor.execute("insert into products values (?, ?, ?, ?, ?, ?, ?, ?)", (datetime.now().strftime('%Y-%m-%d %H:%M'), self.name, codigo, prod_url, name, categoria, tab, 'avisar'))                
+                record = Inserter()
+                record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
+                record['spider']=self.name 
+                record['codigo']=codigo 
+                record['prod_url']=prod_url 
+                record['name']=name 
+                record['categoria']=categoria 
+                record['tab']=tab 
+                record['send']='avisar'           
+                self.add_name(tab, str(codigo))
+                if len( [id for id in rows if str(id) == str(codigo)]) == 0:     
+                    yield record
 
-        database.commit()                       
         if(finish == False):
             uri = response.url.split('&p=')
             part = uri[0]
@@ -91,25 +95,27 @@ class NikeNovidadesSpider(scrapy.Spider):
             url = '{}&p={}'.format(part, str(page))
             yield scrapy.Request(url=url, callback=self.parse)
         else:
-           #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
-            rows = [str(row[0]).strip() for row in cursor.execute('SELECT id FROM products where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'"')]                        
-            try:
-                v = self.encontrados[tab]
-            except:
-                print("========== Err ============")                
-                print(response.url)
-                print('Total items ', len(items))
-                for k in self.encontrados.keys():
-                    print('{} Total={}'.format(k,len(self.encontrados[k])))
-                print("===========================")
-            
-            for row in rows:
-                if len( [id for id in self.encontrados[tab] if str(id) == str(row)]) == 0 :                                       
-                    cursor.execute('update products set send="remover" where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" and id="'+row+'"')
-                    database.commit()
-
-            rows = [str(row[0]).strip() for row in cursor.execute('SELECT url FROM products where send="avisar" and spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" group by url')]
+            #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
+            results = self.database.search(['id'],{
+                'spider':self.name,
+                'categoria':categoria,
+                'tab': tab
+            })        
+            rows = [str(row[0]).strip() for row in results]            
             for row in rows:                    
+                if len( [id for id in self.encontrados[tab] if str(id) == str(row)]) == 0 :                                                         
+                    record = Deleter()
+                    record['id']=row                     
+                    yield record
+            
+            results = self.database.search(['url'],{
+                'spider':self.name,
+                'categoria':categoria,
+                'tab': tab,
+                'send':'avisar'
+            })        
+            rows = [str(row[0]).strip() for row in results]      
+            for row in rows:                                
                 yield scrapy.Request(url=row, callback=self.details)
                 
            

@@ -1,26 +1,12 @@
 import scrapy
-import sqlite3
-import os
-from datetime import datetime
 import json
-
-print("nike_snkrs")
-print(os.path.abspath(os.path.dirname(__file__)))
-db_path = '{}data/nike_database.db'.format(os.path.abspath(os.path.dirname(__file__)).split('crawler/crawler')[0])
-print(db_path)
-database = sqlite3.connect(db_path)
-cursor = database.cursor()
-try:
-    cursor.execute('''CREATE TABLE products
-               (date text, spider text, id text, url text, name text, categoria text, tab text, send text)''')
-    database.commit()
-except:
-    pass
-
-
+from datetime import datetime
+from crawler.items import Inserter, Updater, Deleter
+from data.database import Database
 class NikeSnkrsSpider(scrapy.Spider):
     name = "nike_restock"
     encontrados = {}   
+    database = Database()
 
     def start_requests(self):       
         urls = [            
@@ -37,7 +23,6 @@ class NikeSnkrsSpider(scrapy.Spider):
             self.encontrados[tab] = [name]
 
     def details(self, response):
-        print(response.url)
         opcoes_list = []
         images_list = []
         images = response.xpath('//ul[@class="js-thumb-list"]//img/@src').getall()
@@ -51,8 +36,11 @@ class NikeSnkrsSpider(scrapy.Spider):
                 for k in data.keys():
                     opcoes_list.append('{} tamanho {} por {}'.format(data[k]['TemEstoque'],k, data[k]['PrecoPor']))
 
-        print("|".join(images_list))
-        print("|".join(opcoes_list))
+        record = Updater()        
+        record['prod_url']=response.url 
+        record['imagens']="|".join(images_list) 
+        record['tamanhos']="|".join(opcoes_list) 
+        yield record
         
 
     def parse(self, response):       
@@ -65,7 +53,12 @@ class NikeSnkrsSpider(scrapy.Spider):
             finish = True
 
         #pega todos os nomes da tabela, apenas os nomes    
-        rows = [str(row[0]).strip() for row in cursor.execute('SELECT id FROM products where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'"')]
+        results = self.database.search(['id'],{
+            'spider':self.name,
+            'categoria':categoria,
+            'tab': tab
+        })        
+        rows = [str(row[0]).strip() for row in results]
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
         for item in items:  
@@ -74,13 +67,20 @@ class NikeSnkrsSpider(scrapy.Spider):
             codigo = 'ID{}$'.format(item.xpath('.//a/img/@alt').get().split(".")[-1].strip())
             
 
+            record = Inserter()
+            record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
+            record['spider']=self.name 
+            record['codigo']=codigo 
+            record['prod_url']=prod_url 
+            record['name']=name 
+            record['categoria']=categoria 
+            record['tab']=tab 
+            record['send']='avisar'           
             self.add_name(tab, str(codigo))
-            if len( [id for id in rows if str(id) == str(codigo)]) == 0:                
-                cursor.execute("insert into products values (?, ?, ?, ?, ?, ?, ?, ?)", (datetime.now().strftime('%Y-%m-%d %H:%M'), self.name, codigo, prod_url, name, categoria, tab, 'avisar'))
-                
+            if len( [id for id in rows if str(id) == str(codigo)]) == 0:     
+                yield record  
 
         
-        database.commit()
         if(finish == False):
             uri = response.url.split('&p=')
             part = uri[0]
@@ -89,17 +89,26 @@ class NikeSnkrsSpider(scrapy.Spider):
             yield scrapy.Request(url=url, callback=self.parse)
         else:
             #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
-            rows = [str(row[0]).strip() for row in cursor.execute('SELECT id FROM products where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'"')]                        
+            results = self.database.search(['id'],{
+                'spider':self.name,
+                'categoria':categoria,
+                'tab': tab
+            })        
+            rows = [str(row[0]).strip() for row in results]            
             for row in rows:                    
-                if len( [id for id in self.encontrados[tab] if str(id) == str(row)]) == 0 :                                     
-                    cursor.execute('update products set send="remover" where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" and id="'+row+'"')
-                    database.commit()
+                if len( [id for id in self.encontrados[tab] if str(id) == str(row)]) == 0 :                                                         
+                    record = Deleter()
+                    record['id']=row                     
+                    yield record
             
-            rows = [str(row[0]).strip() for row in cursor.execute('SELECT url FROM products where send="avisar" and spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" group by url')]
-            for row in rows:                    
-                yield scrapy.Request(url=row, callback=self.details)  
-            rows = [str(row[0]).strip() for row in cursor.execute('SELECT url FROM products where send="avisar" and spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" group by url')]
-            for row in rows:                    
+            results = self.database.search(['url'],{
+                'spider':self.name,
+                'categoria':categoria,
+                'tab': tab,
+                'send':'avisar'
+            })        
+            rows = [str(row[0]).strip() for row in results]      
+            for row in rows:                                
                 yield scrapy.Request(url=row, callback=self.details)
             
             

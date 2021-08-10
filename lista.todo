@@ -72,13 +72,30 @@
     ✔ nike_calendario_spider @done (09/08/2021 21:29:01)
     ✔ nike_lancamentos_spider @done (09/08/2021 19:17:34)
     ✔ nike_restock_spider @done (09/08/2021 21:29:12)
+
+☐ centralizar database
+    ✔ artwalk_calendario_spider @done (10/08/2021 14:01:42)
+    ✔ artwalk_novidades_spider @done (10/08/2021 14:01:43)
+    ✔ artwalk_snkrs_spider @done (10/08/2021 14:01:43)
+    ✔ gdlp_novidades_spider @done (10/08/2021 14:05:32)
+    ✔ gdlp_snkrs_spider @done (10/08/2021 14:05:32)
+    ✔ magicfeet_snkrs_spider @done (10/08/2021 14:07:05)
+    ✔ maze_novidades_spider @done (10/08/2021 13:45:20)
+    ✔ maze_snkrs_spider @done (10/08/2021 13:53:19)
+    ✔ nike_calendario_spider @done (10/08/2021 14:26:16)
+    ✔ nike_lancamentos_spider @done (10/08/2021 14:14:52)
+    ✔ nike_restock_spider @done (10/08/2021 14:14:53)
+
+
+
 ☐ Montar o layout da mensagem
     ☐ Colocar a imagem
 ☐ Fazer um test de stress
 ☐ Colocar proxy
-
+☐ Colocar o from scrapy import log
 ☐ refatorar(configs etc...)
 ☐ Criar variaveis de ambiente
-☐ centralizar database
+☐ Rever agrupamentos(canais/urls)
+
 
 

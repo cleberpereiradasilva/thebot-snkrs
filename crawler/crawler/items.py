@@ -6,7 +6,23 @@
 import scrapy
 
 
-class CrawlerItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+class Inserter(scrapy.Item):    
+    created_at = scrapy.Field()
+    spider = scrapy.Field()
+    codigo = scrapy.Field()
+    prod_url = scrapy.Field()
+    name = scrapy.Field()
+    categoria = scrapy.Field()
+    tab = scrapy.Field()
+    send = scrapy.Field()
+    imagens = scrapy.Field()
+    tamanhos = scrapy.Field()
+
+class Updater(scrapy.Item):
+    prod_url = scrapy.Field()
+    imagens = scrapy.Field()
+    tamanhos = scrapy.Field()
+
+class Deleter(scrapy.Item):
+    id = scrapy.Field()
+    
