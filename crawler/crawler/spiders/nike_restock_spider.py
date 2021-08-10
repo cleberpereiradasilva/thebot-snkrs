@@ -2,6 +2,7 @@ import scrapy
 import sqlite3
 import os
 from datetime import datetime
+import json
 
 print("nike_snkrs")
 print(os.path.abspath(os.path.dirname(__file__)))
@@ -18,7 +19,7 @@ except:
 
 
 class NikeSnkrsSpider(scrapy.Spider):
-    name = "nike_snkrs"
+    name = "nike_restock"
     encontrados = {}   
 
     def start_requests(self):       
@@ -35,6 +36,24 @@ class NikeSnkrsSpider(scrapy.Spider):
         else:
             self.encontrados[tab] = [name]
 
+    def details(self, response):
+        print(response.url)
+        opcoes_list = []
+        images_list = []
+        images = response.xpath('//ul[@class="js-thumb-list"]//img/@src').getall()
+        for imagem in images:
+            images_list.append(imagem)        
+        items = response.xpath('//script/text()').getall()        
+        for item in items:   
+            if('SKUsCorTamanho' in item):                
+                tamanhos = item.split('=')[1].strip()
+                data = json.loads(tamanhos) 
+                for k in data.keys():
+                    opcoes_list.append('{} tamanho {} por {}'.format(data[k]['TemEstoque'],k, data[k]['PrecoPor']))
+
+        print("|".join(images_list))
+        print("|".join(opcoes_list))
+        
 
     def parse(self, response):       
         finish  = True
@@ -43,14 +62,14 @@ class NikeSnkrsSpider(scrapy.Spider):
         #pega todos os ites da pagina, apenas os nomes dos tenis
         items = [ name for name in response.xpath('//div[contains(@class,"produto produto--")]') ]
         if(len(items) > 0 ):
-            finish = False
+            finish = True
 
         #pega todos os nomes da tabela, apenas os nomes    
         rows = [str(row[0]).strip() for row in cursor.execute('SELECT id FROM products where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'"')]
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
         for item in items:  
-            name = item.xpath('.//h2//span/text()').get()
+            name = item.xpath('.//h2//span/text()').get()           
             prod_url = item.xpath('.//a/@href').get()
             codigo = 'ID{}$'.format(item.xpath('.//a/img/@alt').get().split(".")[-1].strip())
             
@@ -75,6 +94,15 @@ class NikeSnkrsSpider(scrapy.Spider):
                 if len( [id for id in self.encontrados[tab] if str(id) == str(row)]) == 0 :                                     
                     cursor.execute('update products set send="remover" where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" and id="'+row+'"')
                     database.commit()
+            
+            rows = [str(row[0]).strip() for row in cursor.execute('SELECT url FROM products where send="avisar" and spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" group by url')]
+            for row in rows:                    
+                yield scrapy.Request(url=row, callback=self.details)  
+            rows = [str(row[0]).strip() for row in cursor.execute('SELECT url FROM products where send="avisar" and spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" group by url')]
+            for row in rows:                    
+                yield scrapy.Request(url=row, callback=self.details)
+            
+            
 
         
 

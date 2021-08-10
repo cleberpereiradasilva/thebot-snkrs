@@ -1,6 +1,6 @@
 import scrapy
 import sqlite3
-import os
+import os, json
 from datetime import datetime
 
 print("nike_snkrs")
@@ -43,7 +43,24 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
                 url='https://www.magicfeet.com.br{}1'.format(script.split('load(\'')[1].split('\'')[0])                               
                 yield scrapy.Request(url=url, callback=self.parse)  
 
-
+    def details(self, response):
+        images_list = []
+        opcoes_list = []
+        items = response.xpath('//script/text()').getall() 
+        for item in items:   
+            if 'skuJson_' in item and 'productId' in item and not '@context' in item:                
+                tamanhos = '{' + item.split('= {')[1].split('};')[0].strip() + '}'                   
+                data = json.loads(tamanhos)                 
+                skus = data['skus']                                
+                for sku in skus:                                         
+                    if sku['available']:
+                        opcoes_list.append('Tamanho {} por {}'.format(sku['dimensions'][list(sku['dimensions'].keys())[0]],sku['fullSellingPrice']))                
+        images = response.xpath('//div[@class="product-images"]//li//a/@rel').getall()
+        for imagem in images:                        
+            images_list.append(imagem) 
+       
+        print("|".join(images_list))
+        print("|".join(opcoes_list)) 
 
     def parse(self, response):       
         finish  = True   
@@ -59,7 +76,7 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
         items = [ name for name in response.xpath('//div[@class="shelf-item"]') ]
 
         if(len(items) > 0 ):
-            finish = False
+            finish = True
 
         #pega todos os nomes da tabela, apenas os nomes    
         rows = [str(row[0]).strip() for row in cursor.execute('SELECT id FROM products where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'"')]
@@ -88,7 +105,10 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
             for row in rows:                    
                 if len( [id for id in self.encontrados[tab] if str(id) == str(row)]) == 0 :                                     
                     cursor.execute('update products set send="remover" where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" and id="'+row+'"')
-                    database.commit()
+                    database.commit()                    
+            rows = [str(row[0]).strip() for row in cursor.execute('SELECT url FROM products where send="avisar" and spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" group by url')]
+            for row in rows:                                
+                yield scrapy.Request(url=row, callback=self.details)
 
         
 

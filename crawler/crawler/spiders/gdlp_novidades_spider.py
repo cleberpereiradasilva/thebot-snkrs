@@ -1,6 +1,6 @@
 import scrapy
 import sqlite3
-import os
+import os,json
 from datetime import datetime
 
 print("nike_snkrs")
@@ -35,6 +35,26 @@ class GdlpNovidadesSpider(scrapy.Spider):
         else:
             self.encontrados[tab] = [name]
 
+    def details(self, response):
+        print(response.url)
+        opcoes_list = []
+        images_list = []
+        images = response.xpath('//div[@class="product-img-box"]//a/@data-image').getall()
+        for imagem in images:
+            images_list.append(imagem)        
+        items = response.xpath('//script/text()').getall()  
+        price = response.xpath('//span[@class="price"]/text()').get()        
+        for item in items:   
+            if('new Product.Config(' in item):                
+                tamanhos = item.split('(')[1].split(');')[0].strip()                                
+                options = json.loads(tamanhos)['attributes']                
+                for k in options.keys():
+                    for option in options[k]['options']:
+                        if len(option['products']) > 0:
+                            opcoes_list.append(('{} {} por {}'.format(options[k]['label'], option['label'], option['price'] if option['price'] != '0' else price)))
+
+        print("|".join(images_list))
+        print("|".join(opcoes_list))
 
     def parse(self, response):       
         finish  = True
@@ -43,7 +63,7 @@ class GdlpNovidadesSpider(scrapy.Spider):
         #pega todos os ites da pagina, apenas os nomes dos tenis
         items = [ name for name in response.xpath('//li[@class="item last"]') ]
         if(len(items) > 0 ):
-            finish = False
+            finish = True
         
         #pega todos os nomes da tabela, apenas os nomes    
         rows = [str(row[0]).strip() for row in cursor.execute('SELECT id FROM products where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'"')]
@@ -74,6 +94,9 @@ class GdlpNovidadesSpider(scrapy.Spider):
                 if len( [id for id in self.encontrados[tab] if str(id) == str(row)]) == 0 :                                     
                     cursor.execute('update products set send="remover" where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" and id="'+row+'"')
                     database.commit()
+            rows = [str(row[0]).strip() for row in cursor.execute('SELECT url FROM products where send="avisar" and spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" group by url')]
+            for row in rows:                                
+                yield scrapy.Request(url=row, callback=self.details)
 
         
 

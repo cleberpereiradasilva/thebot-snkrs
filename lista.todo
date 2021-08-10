@@ -47,18 +47,38 @@
     ✔ nike   https://www.magicfeet.com.br/buscapagina?fq=B%3a2000008&O=OrderByReleaseDateDESC&PS=24&sl=a7f7a784-af47-4579-b2d9-d67a557ae307&cc=24&sm=0&PageNumber=2 @done (07/08/2021 03:06:31)
 
 
-☐ Fazer mapa dos links e seus grupos
-☐ Deixar rodando no heroku para testar
+✔ Fazer mapa dos links e seus grupos @done (09/08/2021 11:50:12)
+✔ Deixar rodando no heroku para testar @done (09/08/2021 02:03:06)
 ☐ Criar os canais para já direcionar as mensagens corretamente
-☐ Checar se está pegando algum 'Em breve'
-☐ Colocar mais detalhes dos produtos nas mensagens
-
-
-
-
-
+✔ Checar se está pegando algum 'Em breve' @done (09/08/2021 12:08:17)
+    ✔ artwalk_novidades_spider @done (09/08/2021 11:59:18)
+    ✔ artwalk_snkrs_spider @done (09/08/2021 12:00:50)
+    ✔ gdlp_novidades_spider @done (09/08/2021 12:01:27)
+    ✔ gdlp_snkrs_spider @done (09/08/2021 12:02:23)
+    ✔ magicfeet_snkrs_spider @done (09/08/2021 12:03:27)
+    ✔ maze_novidades_spider @done (09/08/2021 12:04:39)
+    ✔ maze_snkrs_spider @done (09/08/2021 12:05:34)
+    ✔ nike_novidades_spider @done (09/08/2021 12:07:29)
+    ✔ nike_snkrs_spider @done (09/08/2021 12:08:16)
+☐ Pegar mais detalhes dos produtos nas mensagens
+    ✔ artwalk_calendario_spider @done (09/08/2021 19:17:32)
+    ✔ artwalk_novidades_spider @done (09/08/2021 19:55:48)
+    ✔ artwalk_snkrs_spider @done (09/08/2021 19:57:45)
+    ✔ gdlp_novidades_spider @done (09/08/2021 22:16:16)
+    ✔ gdlp_snkrs_spider @done (09/08/2021 22:19:21)
+    ✔ magicfeet_snkrs_spider @done (09/08/2021 23:17:54)
+    ✔ maze_novidades_spider @done (09/08/2021 22:53:27)
+    ✔ maze_snkrs_spider @done (09/08/2021 22:56:42)
+    ✔ nike_calendario_spider @done (09/08/2021 21:29:01)
+    ✔ nike_lancamentos_spider @done (09/08/2021 19:17:34)
+    ✔ nike_restock_spider @done (09/08/2021 21:29:12)
+☐ Montar o layout da mensagem
+    ☐ Colocar a imagem
+☐ Fazer um test de stress
+☐ Colocar proxy
 
 ☐ refatorar(configs etc...)
+☐ Criar variaveis de ambiente
 ☐ centralizar database
 
 

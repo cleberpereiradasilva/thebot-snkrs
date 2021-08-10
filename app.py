@@ -26,7 +26,7 @@ from crawler.crawler.spiders.artwalk_novidades_spider import ArtwalkNovidadesSpi
 from crawler.crawler.spiders.magicfeet_snkrs_spider import MagicfeetSnkrsSpider
 
 
-
+from crawler.crawler.spiders.nike_test_spider import NikeTestSpider
 
 
 from discord.ext import tasks
@@ -43,12 +43,12 @@ cursor = database.cursor()
 
 
 
-async def run_spider(spider):
+async def run_spider(spider, sender):
     def f(q):
         try:
             configure_logging()
             runner = crawler.CrawlerRunner()
-            runner.crawl(spider)            
+            runner.crawl(spider, sender=sender)            
             deferred = runner.join()
             deferred.addBoth(lambda _: reactor.stop())
             reactor.run()
@@ -90,9 +90,30 @@ class MyClient(discord.Client):
         print('Logado...')
         print('Primeira vez. ',self.created)
 
+    async def sender(self, message):
+       
+        self.message = message
 
     @tasks.loop(seconds=600) # task runs every 15 seconds
     async def my_background_task(self):    
+        send_to = self.get_channel(873450794404425779)
+        await run_spider(NikeTestSpider, send_to)
+
+        embed = discord.Embed(title="Your title here", description="Your desc here") #,color=Hex code
+        embed.set_thumbnail(url="https://images.lojanike.com.br/500x500/produto/tenis-nike-sb-zoom-stefan-janoski-slip-rm-unissex-CU9230-400-1.jpg")
+        embed.add_field(name="Nome", value="you can make as much as fields you like to")
+        embed.add_field(name="Valor", value="you can make as much as fields you like to")
+        embed.add_field(name="Opções", value="you can make as much as fields you like to")
+        
+                
+        
+        #await send_to.send(embed=embed)  
+
+        return 
+
+
+
+
         spiders = [
             NikeSnkrsSpider,
             NikeCalendarioSpider,

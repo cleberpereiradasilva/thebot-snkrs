@@ -1,6 +1,6 @@
 import scrapy
 import sqlite3
-import os
+import os, json
 from datetime import datetime
 
 print("nike_snkrs")
@@ -42,7 +42,21 @@ class MazeSnkrsSpider(scrapy.Spider):
                 url = 'https://www.maze.com.br{}'.format(href)
                 yield scrapy.Request(url=url, callback=self.extract_filter)
 
-        
+    def details(self, response):
+        print(response.url)
+        opcoes_list = []
+        images_list = []
+        images = response.xpath('//div[contains(@class,"car-gallery")]//img/@src').getall()
+        for imagem in images:
+            images_list.append('https:{}'.format(imagem))        
+        items = response.xpath('//input[@id="principal-lista-sku"]/@value').get()
+        options = json.loads(items)                
+        for item in options:               
+            for variation in item['Variations']:                                
+                opcoes_list.append(('Tamanho {} por R$ {:.2f}'.format(variation['Name'], item['Price'])))
+            
+        print("|".join(images_list))
+        print("|".join(opcoes_list))    
 
     def extract_filter(self, response):
         path = response.url.replace('https://www.maze.com.br','')
@@ -59,7 +73,7 @@ class MazeSnkrsSpider(scrapy.Spider):
         items = [ name for name in response.xpath('//div[@class="ui card produto product-in-card"]') ]
 
         if(len(items) > 0 ):
-            finish = False
+            finish = True
 
         #pega todos os nomes da tabela, apenas os nomes    
         rows = [str(row[0]).strip() for row in cursor.execute('SELECT id FROM products where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'"')]
@@ -89,7 +103,9 @@ class MazeSnkrsSpider(scrapy.Spider):
                 if len( [id for id in self.encontrados[tab] if str(id) == str(row)]) == 0 :                                     
                     cursor.execute('update products set send="remover" where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" and id="'+row+'"')
                     database.commit()
-
+            rows = [str(row[0]).strip() for row in cursor.execute('SELECT url FROM products where send="avisar" and spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" group by url')]
+            for row in rows:                                
+                yield scrapy.Request(url=row, callback=self.details)
         
 
       

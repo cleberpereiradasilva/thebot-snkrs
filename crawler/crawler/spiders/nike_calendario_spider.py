@@ -1,6 +1,6 @@
 import scrapy
 import sqlite3
-import os
+import os, json
 from datetime import datetime
 
 print("nike_snkrs")
@@ -33,33 +33,40 @@ class NikeCalendarioSpider(scrapy.Spider):
         if tab in  self.encontrados:
             self.encontrados[tab].append(name)
         else:
-            self.encontrados[tab] = [name]
+            self.encontrados[tab] = [name]   
 
-
-    def parse(self, response):       
+    def parse(self, response):               
         finish  = True
         tab = response.url.replace('?','/').split('/')[4]  
         categoria = 'restock' if tab == 'Estoque' else 'nov-calcados'
         #pega todos os ites da pagina, apenas os nomes dos tenis
         items = [ name for name in response.xpath('//div[contains(@class,"produto produto--")]') ]
         if(len(items) > 0 ):
-            finish = False
+            finish = True
 
         #pega todos os nomes da tabela, apenas os nomes    
         rows = [str(row[0]).strip() for row in cursor.execute('SELECT id FROM products where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'"')]
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
         for item in items:  
+            opcoes_list = []
+            images_list = []
             name = item.xpath('.//h2//span/text()').get()
             prod_url = item.xpath('.//a/@href').get()
-            codigo = 'ID{}$'.format(item.xpath('.//a/img/@alt').get().split(".")[-1].strip())
-            
+            codigo = 'ID{}$'.format(item.xpath('.//a/img/@alt').get().split(".")[-1].strip())            
+            imagem = item.xpath('.//div[@class="produto__imagem"]//a//img/@data-src').get()
+            release_full = item.xpath('.//h2[@class="produto__detalhe-titulo"]//span[descendant-or-self::text()]').get()
+            release = release_full.replace('<span class="snkr-release__mobile-date">','').replace('<span>','').replace('</span>','') .replace('Disponível às', 'Disponível em')
+            images_list = [imagem]
+            opcoes_list = [release]
+
+            print("|".join(images_list))
+            print("|".join(opcoes_list))            
 
             self.add_name(tab, str(codigo))
             if len( [id for id in rows if str(id) == str(codigo)]) == 0:                
                 cursor.execute("insert into products values (?, ?, ?, ?, ?, ?, ?, ?)", (datetime.now().strftime('%Y-%m-%d %H:%M'), self.name, codigo, prod_url, name, categoria, tab, 'avisar'))
                 
-
         
         database.commit()
         if(finish == False):
@@ -74,8 +81,7 @@ class NikeCalendarioSpider(scrapy.Spider):
             for row in rows:                    
                 if len( [id for id in self.encontrados[tab] if str(id) == str(row)]) == 0 :                                     
                     cursor.execute('update products set send="remover" where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" and id="'+row+'"')
-                    database.commit()
-
+                    database.commit()          
         
 
       

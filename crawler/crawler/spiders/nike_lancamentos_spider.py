@@ -2,7 +2,7 @@ import scrapy
 import sqlite3
 import os
 from datetime import datetime
-
+import json
 
 print("nike_novidades")
 print(os.path.abspath(os.path.dirname(__file__)))
@@ -18,7 +18,7 @@ except:
     pass
 
 class NikeNovidadesSpider(scrapy.Spider):
-    name = "nike_novidades"    
+    name = "nike_lancamentos"    
     encontrados = {}
 
 
@@ -41,6 +41,24 @@ class NikeNovidadesSpider(scrapy.Spider):
             self.encontrados[tab].append(id)
         else:
             self.encontrados[tab] = [id]
+            
+    def details(self, response):
+        print(response.url)
+        opcoes_list = []
+        images_list = []
+        images = response.xpath('//ul[@class="js-thumb-list"]//img/@src').getall()
+        for imagem in images:
+            images_list.append(imagem)        
+        items = response.xpath('//script/text()').getall()        
+        for item in items:   
+            if('SKUsCorTamanho' in item):                
+                tamanhos = item.split('=')[1].strip()
+                data = json.loads(tamanhos) 
+                for k in data.keys():
+                    opcoes_list.append('{} tamanho {} por {}'.format(data[k]['TemEstoque'],k, data[k]['PrecoPor']))                
+
+        print("|".join(images_list))
+        print("|".join(opcoes_list))
 
     def parse(self, response):
         items = response.xpath('//div[@data-codigo]')  
@@ -48,7 +66,7 @@ class NikeNovidadesSpider(scrapy.Spider):
         tab = 'Feminino' if 'fem' in response.url else 'Masculino'
         categoria = 'nov-calcados' if 'Calcados' in response.url else 'nov-roupas' if 'Roupas' in response.url else 'nov-acessorios'
         if(len(items) > 0 ):
-            finish = False           
+            finish = True           
 
         for item in items:                      
             codigo = 'ID{}$'.format(item.xpath('./@data-codigo').get().strip())            
@@ -89,6 +107,10 @@ class NikeNovidadesSpider(scrapy.Spider):
                 if len( [id for id in self.encontrados[tab] if str(id) == str(row)]) == 0 :                                       
                     cursor.execute('update products set send="remover" where spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" and id="'+row+'"')
                     database.commit()
+
+            rows = [str(row[0]).strip() for row in cursor.execute('SELECT url FROM products where send="avisar" and spider="'+self.name+'" and categoria="'+categoria+'" and tab="'+tab+'" group by url')]
+            for row in rows:                    
+                yield scrapy.Request(url=row, callback=self.details)
                 
            
 
