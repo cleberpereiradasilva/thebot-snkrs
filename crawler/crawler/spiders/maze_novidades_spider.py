@@ -1,23 +1,31 @@
 import scrapy
 import json
 from datetime import datetime
-from crawler.items import Inserter, Updater, Deleter
-from data.database import Database
+try:
+    from crawler.crawler.items import Inserter, Updater, Deleter
+    from crawler.data.database import Database
+except:
+    from crawler.items import Inserter, Updater, Deleter
+    from data.database import Database
+
 class MazeNovidadesSpider(scrapy.Spider):
     name = "maze_novidades"
     encontrados = {}   
-    database = Database()
+    def __init__(self, database=None):
+        if database == None:
+            self.database = Database()
+        else:    
+            self.database = database
+
 
     def start_requests(self):       
-        urls = [            
-            'https://www.maze.com.br/categoria/tenis/nike',
-            # 'https://www.maze.com.br/categoria/tenis/adidas',
-            # 'https://www.maze.com.br/categoria/roupas/camisetas',
-            # 'https://www.maze.com.br/categoria/roupas/calcas',
-            # 'https://www.maze.com.br/categoria/roupas/saia',
-            # 'https://www.maze.com.br/categoria/acessorios/meias',
-            # 'https://www.maze.com.br/categoria/acessorios/gorros',
-            # 'https://www.maze.com.br/categoria/acessorios/bones',
+        urls = [                        
+            'https://www.maze.com.br/categoria/roupas/camisetas',
+            'https://www.maze.com.br/categoria/roupas/calcas',
+            'https://www.maze.com.br/categoria/roupas/saia',
+            'https://www.maze.com.br/categoria/acessorios/meias',
+            'https://www.maze.com.br/categoria/acessorios/gorros',
+            'https://www.maze.com.br/categoria/acessorios/bones',
         ]
         for url in urls:
             yield scrapy.Request(url=url, callback=self.extract_filter)  
@@ -56,13 +64,13 @@ class MazeNovidadesSpider(scrapy.Spider):
     def parse(self, response):       
         finish  = True                
         tab = response.url.split('=')[1].split('&')[0]        
-        categoria = 'nov-calcados' if 'tenis' in response.url else 'nov-roupas' if 'roupas' in response.url else 'nov-acessorios'
+        categoria = 'maze_novidades'
               
         #pega todos os ites da pagina, apenas os nomes dos tenis
         items = [ name for name in response.xpath('//div[@class="ui card produto product-in-card"]') ]
 
         if(len(items) > 0 ):
-            finish = True
+            finish = False
 
         #pega todos os nomes da tabela, apenas os nomes    
         results = self.database.search(['id'],{
@@ -85,7 +93,10 @@ class MazeNovidadesSpider(scrapy.Spider):
             record['name']=name 
             record['categoria']=categoria 
             record['tab']=tab 
-            record['send']='avisar'           
+            record['send']='avisar'    
+            record['imagens']=''  
+            record['tamanhos']=''    
+            record['price']=''         
             self.add_name(tab, str(codigo))
             if len( [id for id in rows if str(id) == str(codigo)]) == 0:     
                 yield record

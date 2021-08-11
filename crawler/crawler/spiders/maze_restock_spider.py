@@ -7,8 +7,9 @@ try:
 except:
     from crawler.items import Inserter, Updater, Deleter
     from data.database import Database
-class MagicfeetSnkrsSpider(scrapy.Spider):
-    name = "magicfeet_snkrs"
+
+class MazeRestockSpider(scrapy.Spider):
+    name = "maze_restock"
     encontrados = {}   
     def __init__(self, database=None):
         if database == None:
@@ -18,12 +19,11 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
 
 
     def start_requests(self):       
-        urls = [
-            'https://www.magicfeet.com.br/nike?O=OrderByReleaseDateDESC#2',  
-            'https://www.magicfeet.com.br/jordan-brand?O=OrderByReleaseDateDESC',
+        urls = [            
+            'https://www.maze.com.br/',            
         ]
         for url in urls:
-            yield scrapy.Request(url=url, callback=self.extract_sl)  
+            yield scrapy.Request(url=url, callback=self.extract_links)  
 
 
     def add_name(self, tab, name):
@@ -32,47 +32,44 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
         else:
             self.encontrados[tab] = [name]
 
-    def extract_sl(self, response):
-        scripts = response.xpath('//script/text()').getall()
-        for script in scripts:
-            if '&sl=' in script:
-                url='https://www.magicfeet.com.br{}1'.format(script.split('load(\'')[1].split('\'')[0])                               
-                yield scrapy.Request(url=url, callback=self.parse)  
+    def extract_links(self, response):
+        for categoria in ['nike', 'adidas']:
+            hrefs = response.xpath('//a[@href="/categoria/{}"]/parent::*//div[contains(@class,"ui list")]//a/@href'.format(categoria)).getall()        
+            for href in hrefs:                                 
+                url = 'https://www.maze.com.br{}'.format(href)
+                yield scrapy.Request(url=url, callback=self.extract_filter)
 
-    def details(self, response):
-        images_list = []
+    def details(self, response):       
         opcoes_list = []
-        items = response.xpath('//script/text()').getall() 
-        for item in items:   
-            if 'skuJson_' in item and 'productId' in item and not '@context' in item:                
-                tamanhos = '{' + item.split('= {')[1].split('};')[0].strip() + '}'                   
-                data = json.loads(tamanhos)                 
-                skus = data['skus']                                
-                for sku in skus:                                         
-                    if sku['available']:
-                        opcoes_list.append('Tamanho {} por {}'.format(sku['dimensions'][list(sku['dimensions'].keys())[0]],sku['fullSellingPrice']))                
-        images = response.xpath('//div[@class="product-images"]//li//a/@rel').getall()
-        for imagem in images:                        
-            images_list.append(imagem) 
-       
+        images_list = []
+        images = response.xpath('//div[contains(@class,"car-gallery")]//img/@src').getall()
+        for imagem in images:
+            images_list.append('https:{}'.format(imagem))        
+        items = response.xpath('//input[@id="principal-lista-sku"]/@value').get()
+        options = json.loads(items)                
+        for item in options:               
+            for variation in item['Variations']:                                
+                opcoes_list.append(('Tamanho {} por R$ {:.2f}'.format(variation['Name'], item['Price'])))
+            
         record = Updater()        
         record['prod_url']=response.url 
         record['imagens']="|".join(images_list) 
         record['tamanhos']="|".join(opcoes_list) 
-        yield record
+        yield record  
+
+    def extract_filter(self, response):
+        path = response.url.replace('https://www.maze.com.br','')
+        filter = response.xpath('//input[@id="GenericPageFilter"]/@value').get()        
+        url='https://www.maze.com.br/product/getproductscategory/?path={}&viewList=g&pageSize=12&order=&brand=&category={}&group=&keyWord=&initialPrice=&finalPrice=&variations=&idAttribute=&idEventList=&idCategories=&idGroupingType=&pageNumber=1'.format(path,filter)
+        yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):       
-        finish  = True   
-        tab=""             
-        if '3a2000008&' in response.url :
-            tab = 'nike'             
-        elif '3a2000030' in response.url: 
-            tab = 'jordan'             
-
-        categoria = 'magicfeet_snkrs'       
+        finish  = True                
+        tab = response.url.split('=')[1].split('&')[0]
+        categoria = 'maze_restock' 
         
         #pega todos os ites da pagina, apenas os nomes dos tenis
-        items = [ name for name in response.xpath('//div[@class="shelf-item"]') ]
+        items = [ name for name in response.xpath('//div[@class="ui card produto product-in-card"]') ]
 
         if(len(items) > 0 ):
             finish = False
@@ -87,9 +84,9 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
         for item in items:  
-            name = item.xpath('.//h3//a/@title').get()
-            prod_url = item.xpath('.//a/@href').get()            
-            codigo = 'ID{}$'.format(item.xpath('./@data-product-id').get())
+            name = item.xpath('.//a/@title').get()
+            prod_url = 'https://www.maze.com.br{}'.format(item.xpath('.//a/@href').get())
+            codigo = 'ID{}$'.format(item.xpath('.//meta[@itemprop="productID"]/@content').get())           
 
             record = Inserter()
             record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
@@ -99,20 +96,19 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
             record['name']=name 
             record['categoria']=categoria 
             record['tab']=tab 
-            record['send']='avisar'  
+            record['send']='avisar'    
             record['imagens']=''  
             record['tamanhos']=''    
-            record['price']=''  
-
+            record['price']=''         
             self.add_name(tab, str(codigo))
             if len( [id for id in rows if str(id) == str(codigo)]) == 0:     
-                yield record
+                yield record        
         
         if(finish == False):
-            uri = response.url.split('&PageNumber=')
+            uri = response.url.split('&pageNumber=')
             part = uri[0]
             page = int(uri[1]) + 1
-            url = '{}&PageNumber={}'.format(part, str(page))
+            url = '{}&pageNumber={}'.format(part, str(page))
             yield scrapy.Request(url=url, callback=self.parse)
         else:
             #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
@@ -121,23 +117,22 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
                 'categoria':categoria,
                 'tab': tab
             })        
-            rows = [str(row[0]).strip() for row in results]            
+            rows = [str(row[0]).strip() for row in results] 
             for row in rows:                    
-                if len( [id for id in self.encontrados[tab] if str(id) == str(row)]) == 0 :                                                         
+                if len( [id for id in self.encontrados[tab] if str(id) == str(row)]) == 0 :                                     
                     record = Deleter()
                     record['id']=row                     
                     yield record
-            
+
             results = self.database.search(['url'],{
                 'spider':self.name,
                 'categoria':categoria,
                 'tab': tab,
                 'send':'avisar'
             })        
-            rows = [str(row[0]).strip() for row in results]      
+            rows = [str(row[0]).strip() for row in results]
             for row in rows:                                
                 yield scrapy.Request(url=row, callback=self.details)
-
         
 
       

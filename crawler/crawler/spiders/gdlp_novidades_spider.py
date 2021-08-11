@@ -1,13 +1,21 @@
 import scrapy
 import json
 from datetime import datetime
-from crawler.items import Inserter, Updater, Deleter
-from data.database import Database
+try:
+    from crawler.crawler.items import Inserter, Updater, Deleter
+    from crawler.data.database import Database
+except:
+    from crawler.items import Inserter, Updater, Deleter
+    from data.database import Database
 
 class GdlpNovidadesSpider(scrapy.Spider):
     name = "gdlp_novidades"
     encontrados = {}   
-    database = Database()
+    def __init__(self, database=None):
+        if database == None:
+            self.database = Database()
+        else:    
+            self.database = database
 
     def start_requests(self):       
         urls = [            
@@ -49,12 +57,12 @@ class GdlpNovidadesSpider(scrapy.Spider):
 
     def parse(self, response):       
         finish  = True
-        tab = 'lancamentos'       
-        categoria = 'novidades' 
+        tab = 'gldp_lancamentos'       
+        categoria = 'gldp_lancamentos' 
         #pega todos os ites da pagina, apenas os nomes dos tenis
         items = [ name for name in response.xpath('//li[@class="item last"]') ]
         if(len(items) > 0 ):
-            finish = True
+            finish = False
         
         #pega todos os nomes da tabela, apenas os nomes    
         results = self.database.search(['id'],{
@@ -78,7 +86,10 @@ class GdlpNovidadesSpider(scrapy.Spider):
             record['name']=name 
             record['categoria']=categoria 
             record['tab']=tab 
-            record['send']='avisar'           
+            record['send']='avisar'      
+            record['imagens']=''  
+            record['tamanhos']=''    
+            record['price']=''       
             self.add_name(tab, str(codigo))
             if len( [id for id in rows if str(id) == str(codigo)]) == 0:     
                 yield record    

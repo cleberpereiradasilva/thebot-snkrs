@@ -1,11 +1,20 @@
 import scrapy
 from datetime import datetime
-from crawler.items import Inserter, Updater, Deleter
-from data.database import Database
+try:
+    from crawler.crawler.items import Inserter, Updater, Deleter
+    from crawler.data.database import Database
+except:
+    from crawler.items import Inserter, Updater, Deleter
+    from data.database import Database
 class NikeCalendarioSpider(scrapy.Spider):
     name = "nike_calendario"
     encontrados = {}  
-    database = Database() 
+    def __init__(self, database=None):
+        if database == None:
+            self.database = Database()
+        else:    
+            self.database = database
+
 
     def start_requests(self):       
         urls = [
@@ -24,11 +33,11 @@ class NikeCalendarioSpider(scrapy.Spider):
     def parse(self, response):               
         finish  = True
         tab = response.url.replace('?','/').split('/')[4]  
-        categoria = 'restock' if tab == 'Estoque' else 'nov-calcados'
+        categoria = 'nike_calendario_snkrs'
         #pega todos os ites da pagina, apenas os nomes dos tenis
         items = [ name for name in response.xpath('//div[contains(@class,"produto produto--")]') ]
         if(len(items) > 0 ):
-            finish = True
+            finish = False
 
         #pega todos os nomes da tabela, apenas os nomes    
         results = self.database.search(['id'],{
@@ -45,9 +54,7 @@ class NikeCalendarioSpider(scrapy.Spider):
             codigo = 'ID{}$'.format(item.xpath('.//a/img/@alt').get().split(".")[-1].strip())            
             imagem = item.xpath('.//div[@class="produto__imagem"]//a//img/@data-src').get()
             release_full = item.xpath('.//h2[@class="produto__detalhe-titulo"]//span[descendant-or-self::text()]').get()
-            print(release_full)
             release = release_full.replace('<span class="snkr-release__mobile-date">','').replace('<span>','').replace('</span>','') .replace('Disponível às', 'Disponível em')
-            print(release)
 
             record = Inserter()
             record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
@@ -59,7 +66,8 @@ class NikeCalendarioSpider(scrapy.Spider):
             record['tab']=tab 
             record['imagens']=imagem
             record['tamanhos']=release 
-            record['send']='avisar'           
+            record['send']='avisar'    
+            record['price']=''           
             self.add_name(tab, str(codigo))
             if len( [id for id in rows if str(id) == str(codigo)]) == 0:     
                 yield record  

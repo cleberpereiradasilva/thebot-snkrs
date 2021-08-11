@@ -7,8 +7,9 @@ try:
 except:
     from crawler.items import Inserter, Updater, Deleter
     from data.database import Database
-class MagicfeetSnkrsSpider(scrapy.Spider):
-    name = "magicfeet_snkrs"
+
+class ArtwalkRestockSpider(scrapy.Spider):
+    name = "artwalk_snkrs"
     encontrados = {}   
     def __init__(self, database=None):
         if database == None:
@@ -19,8 +20,9 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
 
     def start_requests(self):       
         urls = [
-            'https://www.magicfeet.com.br/nike?O=OrderByReleaseDateDESC#2',  
-            'https://www.magicfeet.com.br/jordan-brand?O=OrderByReleaseDateDESC',
+            'https://www.artwalk.com.br/nike-air-max?O=OrderByPriceASC&PS=24',
+            'https://www.artwalk.com.br/nike-air-force?O=OrderByPriceASC&PS=24',
+            'https://www.artwalk.com.br/T%C3%AAnis/Jordan?O=OrderByReleaseDateDESC&&PS=24&map=specificationFilter_16,specificationFilter_15',
         ]
         for url in urls:
             yield scrapy.Request(url=url, callback=self.extract_sl)  
@@ -36,7 +38,7 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
         scripts = response.xpath('//script/text()').getall()
         for script in scripts:
             if '&sl=' in script:
-                url='https://www.magicfeet.com.br{}1'.format(script.split('load(\'')[1].split('\'')[0])                               
+                url='https://www.artwalk.com.br{}1'.format(script.split('load(\'')[1].split('\'')[0])               
                 yield scrapy.Request(url=url, callback=self.parse)  
 
     def details(self, response):
@@ -45,15 +47,18 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
         items = response.xpath('//script/text()').getall() 
         for item in items:   
             if 'skuJson_' in item and 'productId' in item and not '@context' in item:                
-                tamanhos = '{' + item.split('= {')[1].split('};')[0].strip() + '}'                   
+                tamanhos = '{' + item.split('= {')[1].split('};')[0].strip() + '}'   
                 data = json.loads(tamanhos)                 
-                skus = data['skus']                                
-                for sku in skus:                                         
-                    if sku['available']:
-                        opcoes_list.append('Tamanho {} por {}'.format(sku['dimensions'][list(sku['dimensions'].keys())[0]],sku['fullSellingPrice']))                
-        images = response.xpath('//div[@class="product-images"]//li//a/@rel').getall()
+                skus = data['skus']                
+                for sku in skus:                     
+                    if int(sku['availablequantity']) == 1:                        
+                        opcoes_list.append('1 par tamanho {} por {}'.format(sku['dimensions']['Tamanho'], sku['availablequantity']))
+                    if int(sku['availablequantity']) > 1:                        
+                        opcoes_list.append('{} pares tamanho {} por {}'.format(sku['availablequantity'],sku['dimensions']['Tamanho'], sku['bestPriceFormated']))                
+
+        images = response.xpath('////a[@id="botaoZoom"]/@rel').getall()
         for imagem in images:                        
-            images_list.append(imagem) 
+            images_list.append(imagem)             
        
         record = Updater()        
         record['prod_url']=response.url 
@@ -62,17 +67,18 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
         yield record
 
     def parse(self, response):       
-        finish  = True   
-        tab=""             
-        if '3a2000008&' in response.url :
-            tab = 'nike'             
-        elif '3a2000030' in response.url: 
-            tab = 'jordan'             
-
-        categoria = 'magicfeet_snkrs'       
+        finish  = True                
+        categoria="artwalker_restock"
+        tab=""
+        if 'Air+Max' in response.url :
+            tab = 'air-max'          
+        elif 'air-force' in response.url: 
+            tab = 'air-force'          
+        elif 'Jordan' in response.url:
+            tab = 'air-jordan'               
         
         #pega todos os ites da pagina, apenas os nomes dos tenis
-        items = [ name for name in response.xpath('//div[@class="shelf-item"]') ]
+        items = [ name for name in response.xpath('//div[@class="product-item-container"]') ]
 
         if(len(items) > 0 ):
             finish = False
@@ -87,9 +93,10 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
         for item in items:  
-            name = item.xpath('.//h3//a/@title').get()
-            prod_url = item.xpath('.//a/@href').get()            
-            codigo = 'ID{}$'.format(item.xpath('./@data-product-id').get())
+            name = item.xpath('.//h3//text()').get()
+            prod_url = item.xpath('.//a/@href').get()
+            codigo_parts = prod_url.split('-')            
+            codigo = 'ID{}$'.format(''.join(codigo_parts[-3:]))
 
             record = Inserter()
             record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
@@ -99,11 +106,10 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
             record['name']=name 
             record['categoria']=categoria 
             record['tab']=tab 
-            record['send']='avisar'  
+            record['send']='avisar' 
             record['imagens']=''  
             record['tamanhos']=''    
-            record['price']=''  
-
+            record['price']=''            
             self.add_name(tab, str(codigo))
             if len( [id for id in rows if str(id) == str(codigo)]) == 0:     
                 yield record

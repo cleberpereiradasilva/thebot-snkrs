@@ -1,54 +1,42 @@
 import discord
 import scrapy
+import json
 import os
-import scrapy.crawler as crawler
-import sqlite3
 from multiprocessing import Process, Queue
 from twisted.internet import reactor
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.log import configure_logging
-
-
-from crawler.crawler.spiders.nike_restock_spider import NikeSnkrsSpider
-from crawler.crawler.spiders.nike_calendario_spider import NikeCalendarioSpider
-from crawler.crawler.spiders.nike_lancamentos_spider import NikeNovidadesSpider
-
+from crawler.data.database import Database
 from crawler.crawler.spiders.maze_snkrs_spider import MazeSnkrsSpider
-from crawler.crawler.spiders.maze_novidades_spider import MazeNovidadesSpider
 
-from crawler.crawler.spiders.gdlp_snkrs_spider import GdlpSnkrsSpider
-from crawler.crawler.spiders.gdlp_novidades_spider import GdlpNovidadesSpider
-   
-from crawler.crawler.spiders.artwalk_snkrs_spider import ArtwalkSnkrsSpider
 from crawler.crawler.spiders.artwalk_calendario_spider import ArtwalkCalendarioSpider
 from crawler.crawler.spiders.artwalk_novidades_spider import ArtwalkNovidadesSpider
-
+from crawler.crawler.spiders.artwalk_restock_spider import ArtwalkRestockSpider
+from crawler.crawler.spiders.gdlp_novidades_spider import GdlpNovidadesSpider
+from crawler.crawler.spiders.gdlp_restock_spider import GdlpRestockSpider
+from crawler.crawler.spiders.magicfeet_novidades_spider import MagicfeetNovidadesSpider
 from crawler.crawler.spiders.magicfeet_snkrs_spider import MagicfeetSnkrsSpider
+from crawler.crawler.spiders.maze_novidades_spider import MazeNovidadesSpider
+from crawler.crawler.spiders.maze_restock_spider import MazeRestockSpider
+from crawler.crawler.spiders.maze_snkrs_spider import MazeSnkrsSpider
+from crawler.crawler.spiders.nike_calendario_spider import NikeCalendarioSpider
+from crawler.crawler.spiders.nike_novidades_spider import NikeNovidadesSpider
+from crawler.crawler.spiders.nike_restock_spider import NikeRestockSpider
 
 
-
-
-
+from crawler.crawler import runner_settings as my_settings 
 from discord.ext import tasks
+from scrapy.settings import Settings
 
 
-print("app.py")
-print(os.path.abspath(os.path.dirname(__file__)))
-db_path = '{}/data/nike_database.db'.format(os.path.abspath(os.path.dirname(__file__)).split('crawler/crawler')[0])
-print(db_path)
-
-database = sqlite3.connect(db_path)
-cursor = database.cursor()
-
-
-
-
-async def run_spider(spider, sender):
+async def run_spider(spider, database):
     def f(q):
         try:
+            crawler_settings = Settings()
             configure_logging()
-            runner = crawler.CrawlerRunner()
-            runner.crawl(spider, sender=sender)            
+            crawler_settings.setmodule(my_settings)                       
+            runner = CrawlerRunner(settings=crawler_settings)
+            runner.crawl(spider, database=database)            
             deferred = runner.join()
             deferred.addBoth(lambda _: reactor.stop())
             reactor.run()
@@ -67,154 +55,105 @@ async def run_spider(spider, sender):
 
 
 class MyClient(discord.Client):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
+    def __init__(self, channels=None, *args, **kwargs,):
+        super().__init__(*args, **kwargs)        
         # start the task to run in the background
-        self.my_background_task.start()
-        self.checa_database()
+        self.my_background_task.start()       
+        self.database = Database()
+        self.first_time = self.database.isEmpty()
+        self.channels = channels if channels != None else json.loads(self.database.get_config().replace("'",'"'))
 
-    def checa_database(self):
-        try:            
-            rows = [row[0] for row in cursor.execute('SELECT count(id) FROM products')][0]           
-            if int(rows) > 0:
-                self.created = True
-            else:
-                self.created = False                
+    async def show_channels(self, adm_channel):
+        send_to = self.get_channel(int(adm_channel))
+        pretty_dict_str = json.dumps(self.channels, indent=2, sort_keys=True)                        
+        await send_to.send(pretty_dict_str)
+        return 
+
+    async def delete_by_url(self, url, adm_channel):
+        send_to = self.get_channel(int(adm_channel))        
+        try:
+            url = url.replace('>delete','').strip()
+            self.database.delete_by_url(url)            
+            await send_to.send("Dados removidos com sucesso!")            
+        except Exception as e:                        
+            await send_to.send("Erro ao remover os dados! Nada foi perdido.")
+        return 
+    
+    async def set_channels(self, channels, adm_channel):
+        send_to = self.get_channel(int(adm_channel))
+        bk_channels = self.channels
+        try:
+            config = channels.replace('>configurar','')            
+            channels_temp = json.loads(config)
+            self.channels = json.loads(self.database.set_config(channels_temp).replace("'",'"'))            
+            await send_to.send("Dados atualizados com sucesso!")            
         except:
-            self.created = False
+            self.channels = json.loads(self.database.set_config(bk_channels).replace("'",'"'))
+            await send_to.send("Erro ao atualizar os dados! Nada foi perdido.")
+        return 
 
+    async def on_message(self, message):         
+        adm_channel = os.environ.get('ADMIN_CHANNEL')
+        if adm_channel == None:
+            return
 
+        if int(message.channel.id) != int(adm_channel):
+            #leave
+            return        
+
+        if message.content.startswith('>canais'):
+            await self.show_channels(int(adm_channel))
+        
+        if message.content.startswith('>configurar'):
+           await self.set_channels(message.content, int(adm_channel))
+
+        if message.content.startswith('>delete'):
+           await self.delete_by_url(message.content, int(adm_channel))
+        return
+
+        
     async def on_ready(self):
         print('Logado...')
-        print('Primeira vez. ',self.created)
-        send_to = self.get_channel(873450794404425779)
-        #await run_spider(NikeTestSpider, send_to)
-
-        embed = discord.Embed(title="Your title here", description="Your desc here", color=3066993) #,color=Hex code        
-        embed.set_thumbnail(url="https://images.lojanike.com.br/500x500/produto/tenis-nike-sb-zoom-stefan-janoski-slip-rm-unissex-CU9230-400-1.jpg")        
-        embed.set_image(url="https://images.lojanike.com.br/500x500/produto/tenis-nike-sb-zoom-stefan-janoski-slip-rm-unissex-CU9230-400-1.jpg")                
-        embed.add_field(name="Tamanhos", value="```diff \n - you can **make** \n as much \nas fields \nyou like to```")        
-        embed.set_footer(text = "footer")
-    #     "footer": {
-    #     "text": "Woah! *So cool!* :smirk:",
-    #     "icon_url": "https://i.imgur.com/fKL31aD.jpg"
-    #   },
-        await send_to.send(embed=embed)
-
-    async def sender(self, message):
-       
-        self.message = message
-
+    
     @tasks.loop(seconds=600) # task runs every 15 seconds
-    async def my_background_task(self):    
-       
+    async def my_background_task(self):        
+        spiders = [
+            MazeSnkrsSpider,
+            # ArtwalkCalendarioSpider,
+            # ArtwalkNovidadesSpider,
+            # NikeNovidadesSpider,
+            # ArtwalkRestockSpider,
+            # GdlpNovidadesSpider,
+            # GdlpRestockSpider,
+            # NikeCalendarioSpider,
+            # MagicfeetNovidadesSpider,
+            # MagicfeetSnkrsSpider,
+            # MazeNovidadesSpider,
+            # MazeRestockSpider,
+            # MazeSnkrsSpider,
+            # NikeRestockSpider,
+        ]   
+
+        
+        for spider in spiders:         
+            await run_spider(spider, self.database)
+            if self.first_time:
+               self.database.avisar_todos()           
+            
+            for channel in self.channels:
+                channel_id = int(self.channels[channel]['canal'])
                 
-        
-        #await send_to.send(embed=embed)  
-
-         
-
-
-
-
-        # spiders = [
-        #     NikeSnkrsSpider,
-        #     NikeCalendarioSpider,
-        #     NikeNovidadesSpider,
-        #     MazeSnkrsSpider,
-        #     MazeNovidadesSpider,
-        #     GdlpSnkrsSpider,
-        #     GdlpNovidadesSpider,
-        #     ArtwalkSnkrsSpider,
-        #     ArtwalkCalendarioSpider,
-        #     ArtwalkNovidadesSpider,
-        #     MagicfeetSnkrsSpider,
-        # ]    
-        
-        # channels = [
-        #     # {
-        #     # 'spider': 'nike_snkrs',
-        #     # 'id': 873217111659532288,
-        #     # 'categoria':'restock',            
-        #     # 'mensagem' : 'Novo produto inserido no restock'                
-        #     # },
-        #     # {
-        #     # 'spider': 'nike_novidades',
-        #     # 'id': 873217865686323260,
-        #     # 'categoria':'nov-calcados',            
-        #     # 'mensagem' : 'Novo produto inserido em novidade calçados'                
-        #     # },
-        #     # {
-        #     # 'spider': 'nike_novidades',
-        #     # 'id': 873217679811559534,
-        #     # 'categoria':'nov-acessorios',            
-        #     # 'mensagem' : 'Novo produto inserido em acessórios'                
-        #     # },
-        #     # {
-        #     # 'spider': 'nike_novidades',
-        #     # 'id': 873217679811559534,
-        #     # 'categoria':'nov-roupas',            
-        #     # 'mensagem' : 'Novo produto inserido em roupas'                
-        #     # },
-
-        #     {
-        #     'spider': 'nike_novidades',
-        #     'id': 873450794404425779,
-        #     'categoria':'nov-roupas',            
-        #     'mensagem' : 'Novo produto generico'                
-        #     }    
-
-
-                    
-        # ]
-
-        # spiders_db = [
-        #     'artwalk_calendario',
-        #     'artwalk_novidades',
-        #     'artwalk_snkrs',
-        #     'gdlp_novidades',
-        #     'gdlp_snkrs',
-        #     'magicfeet_snkrs',
-        #     'maze_novidades',
-        #     'maze_snkrs',
-        #     'nike_calendario',
-        #     'nike_novidades',
-        #     'nike_snkrs',
-        # ]
-        # send_to = self.get_channel(873450794404425779)
-        # await send_to.send('Ferificacao inicializada')        
-        # for spider in spiders:            
-        #     await run_spider(spider)            
-
-        #     if self.created == False:
-        #         cursor.execute("update products set send='avisado'")
-        #         database.commit()  
-
-        #     if self.created:           
-        #         for spider in spiders_db:                    
-        #             query = 'SELECT name, url, id FROM products where send="avisar" and spider="{}"'.format(spider)
-
-        #             rows = [[str(row[0]).strip(),str(row[1]).strip(), str(row[2]).strip()]  for row in cursor.execute(query)]            
-        #             for row in rows:
-        #                 print('Enviando mensagem para channel generico')
-        #                 await send_to.send("{}:\n {}\n{}".format('Novo produto generico' , row[0], row[1]))                        
-        #                 cursor.execute("update products set send='avisado' where id='"+row[2]+"'")
-        #                 database.commit()               
-
-        #     # if self.created:           
-        #     #     for channel in channels:
-        #     #         send_to = self.get_channel(channel['id'])
-        #     #         query = 'SELECT name, url, id FROM products where send="avisar" and spider="{}" and categoria="{}"'.format(channel['spider'],channel['categoria'])
-
-        #     #         rows = [[str(row[0]).strip(),str(row[1]).strip(), str(row[2]).strip()]  for row in cursor.execute(query)]            
-        #     #         for row in rows:
-        #     #             print('Enviando mensagem para channel {}'.format(channel['id']))
-        #     #             await send_to.send("{}:\n {}\n{}".format(channel['mensagem'], row[0], row[1]))                        
-        #     #             cursor.execute("update products set send='avisado' where id='"+row[2]+"'")
-        #     #             database.commit()
-        # await send_to.send('Ferificacao finalizada') 
+                send_to = self.get_channel(channel_id)                
+                rows = self.database.avisos(channel)                                
+                for row in rows:
+                    message = '{}'.format(row['name'])
+                    embed = discord.Embed(title=message, url=row['url'], color=3066993) #,color=Hex code        
+                    embed.set_thumbnail(url=row['imagens'][0])                    
+                    content = '\n'.join(row['tamanhos'])
+                    titulo = 'Data' if 'Disponível em' in content else 'Tamanhos'
+                    embed.add_field(name=titulo, value=content)                    
+                    await send_to.send(embed=embed)  
+                    self.database.avisado(row['id'])        
         
         self.created = True
         
@@ -224,6 +163,13 @@ class MyClient(discord.Client):
     async def before_my_task(self):
         await self.wait_until_ready() # wait until the bot logs in
 
-client = MyClient()
 
-client.run('ODcyMTMxNjcwMTcyNjQzMzkw.YQlZ6Q.jFepmzwgmN4iFy-nh5p0qX_gQJU')
+if __name__ == '__main__':    
+    key = os.environ.get('DISCORD_SERVER_KEY')
+    if key:
+        client = MyClient()
+        client.run(key)
+    else:
+        import config_local as config        
+        client = MyClient()
+        client.run(config.key)

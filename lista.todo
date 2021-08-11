@@ -1,5 +1,3 @@
-
-
 ✔ instalar o scrapy @done (05/08/2021 00:45:50)
 ✔ montar helper com o primeiro get<headers + get> @done (05/08/2021 00:45:55)
 ✔ rodar mais de um spider @done (05/08/2021 01:26:35)
@@ -49,7 +47,6 @@
 
 ✔ Fazer mapa dos links e seus grupos @done (09/08/2021 11:50:12)
 ✔ Deixar rodando no heroku para testar @done (09/08/2021 02:03:06)
-☐ Criar os canais para já direcionar as mensagens corretamente
 ✔ Checar se está pegando algum 'Em breve' @done (09/08/2021 12:08:17)
     ✔ artwalk_novidades_spider @done (09/08/2021 11:59:18)
     ✔ artwalk_snkrs_spider @done (09/08/2021 12:00:50)
@@ -73,7 +70,7 @@
     ✔ nike_lancamentos_spider @done (09/08/2021 19:17:34)
     ✔ nike_restock_spider @done (09/08/2021 21:29:12)
 
-☐ centralizar database
+✔ centralizar database @done (10/08/2021 14:29:28)
     ✔ artwalk_calendario_spider @done (10/08/2021 14:01:42)
     ✔ artwalk_novidades_spider @done (10/08/2021 14:01:43)
     ✔ artwalk_snkrs_spider @done (10/08/2021 14:01:43)
@@ -87,15 +84,38 @@
     ✔ nike_restock_spider @done (10/08/2021 14:14:53)
 
 
+✔ Criar os canais para já direcionar as mensagens corretamente @done (10/08/2021 15:56:53)
+✔ Rever agrupamentos(canais/urls) @done (10/08/2021 15:30:23)
 
-☐ Montar o layout da mensagem
-    ☐ Colocar a imagem
+✔ Montar o layout da mensagem @done (10/08/2021 17:23:32)
+    ✔ Colocar a imagem @done (10/08/2021 17:23:33)
+
+✔ Resolver o runner @done (10/08/2021 18:31:47)
+
+✔ fazer um singleton @done (10/08/2021 22:05:17)
 ☐ Fazer um test de stress
+✔ Criar variaveis de ambiente @done (10/08/2021 20:47:07)
+
+✔ Fazer mapa dos links e seus grupos @done (10/08/2021 17:20:14)
+✔ Deixar rodando no heroku para testar @done (10/08/2021 17:20:15)
+✔ Criar os canais para já direcionar as mensagens corretamente @done (10/08/2021 17:20:15)
+✔ Checar se está pegando algum 'Em breve' @done (10/08/2021 17:20:15)
+✔ Colocar mais detalhes dos produtos nas mensagens @done (10/08/2021 17:20:16)
+
+--------- prŕoximos passos ------------
 ☐ Colocar proxy
-☐ Colocar o from scrapy import log
-☐ refatorar(configs etc...)
-☐ Criar variaveis de ambiente
-☐ Rever agrupamentos(canais/urls)
+☐ O site da Nike realmetne está bloqueando, vou ter que deixar preparado para um proxy
+✔ Separar as configurações para permitir você editar os canais @done (10/08/2021 20:46:58)
+☐ Fazer os vídeos explicativos
+☐ Refazer o layout
+✔ Revisar @done (10/08/2021 22:05:24)
+☐ Empacotar tudo
+☐ Fim =D
+
+
+
+
+
 
 
 

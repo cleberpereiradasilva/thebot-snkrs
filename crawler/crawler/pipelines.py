@@ -1,7 +1,11 @@
 from scrapy.exceptions import DropItem
-from crawler.items import Inserter, Updater, Deleter
 import logging
-from data.database import Database
+try:
+    from crawler.crawler.items import Inserter, Updater, Deleter
+    from crawler.data.database import Database
+except:
+    from crawler.items import Inserter, Updater, Deleter
+    from data.database import Database
 class CrawlerPipeline:
     def __init__(self):        
         self.connection = Database()

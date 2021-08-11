@@ -1,19 +1,25 @@
 import scrapy
 import json
 from datetime import datetime
-from crawler.items import Inserter, Updater, Deleter
-from data.database import Database
+try:
+    from crawler.crawler.items import Inserter, Updater, Deleter
+    from crawler.data.database import Database
+except:
+    from crawler.items import Inserter, Updater, Deleter
+    from data.database import Database
 
-class ArtwalkSnkrsSpider(scrapy.Spider):
-    name = "artwalk_snkrs"
+class MagicfeetNovidadesSpider(scrapy.Spider):
+    name = "magicfeet_lancamentos"
     encontrados = {}   
-    database = Database()
+    def __init__(self, database=None):
+        if database == None:
+            self.database = Database()
+        else:    
+            self.database = database
 
     def start_requests(self):       
         urls = [
-            'https://www.artwalk.com.br/nike-air-max?O=OrderByPriceASC&PS=24',
-            'https://www.artwalk.com.br/nike-air-force?O=OrderByPriceASC&PS=24',
-            'https://www.artwalk.com.br/T%C3%AAnis/Jordan?O=OrderByReleaseDateDESC&&PS=24&map=specificationFilter_16,specificationFilter_15',
+            'https://www.magicfeet.com.br/lancamentos',              
         ]
         for url in urls:
             yield scrapy.Request(url=url, callback=self.extract_sl)  
@@ -29,7 +35,7 @@ class ArtwalkSnkrsSpider(scrapy.Spider):
         scripts = response.xpath('//script/text()').getall()
         for script in scripts:
             if '&sl=' in script:
-                url='https://www.artwalk.com.br{}1'.format(script.split('load(\'')[1].split('\'')[0])               
+                url='https://www.magicfeet.com.br{}1'.format(script.split('load(\'')[1].split('\'')[0])                               
                 yield scrapy.Request(url=url, callback=self.parse)  
 
     def details(self, response):
@@ -38,18 +44,15 @@ class ArtwalkSnkrsSpider(scrapy.Spider):
         items = response.xpath('//script/text()').getall() 
         for item in items:   
             if 'skuJson_' in item and 'productId' in item and not '@context' in item:                
-                tamanhos = '{' + item.split('= {')[1].split('};')[0].strip() + '}'   
+                tamanhos = '{' + item.split('= {')[1].split('};')[0].strip() + '}'                   
                 data = json.loads(tamanhos)                 
-                skus = data['skus']                
-                for sku in skus:                     
-                    if int(sku['availablequantity']) == 1:                        
-                        opcoes_list.append('1 par tamanho {} por {}'.format(sku['dimensions']['Tamanho'], sku['availablequantity']))
-                    if int(sku['availablequantity']) > 1:                        
-                        opcoes_list.append('{} pares tamanho {} por {}'.format(sku['availablequantity'],sku['dimensions']['Tamanho'], sku['bestPriceFormated']))                
-
-        images = response.xpath('////a[@id="botaoZoom"]/@rel').getall()
+                skus = data['skus']                                
+                for sku in skus:                                         
+                    if sku['available']:
+                        opcoes_list.append('Tamanho {} por {}'.format(sku['dimensions'][list(sku['dimensions'].keys())[0]],sku['fullSellingPrice']))                
+        images = response.xpath('//div[@class="product-images"]//li//a/@rel').getall()
         for imagem in images:                        
-            images_list.append(imagem)             
+            images_list.append(imagem) 
        
         record = Updater()        
         record['prod_url']=response.url 
@@ -58,24 +61,15 @@ class ArtwalkSnkrsSpider(scrapy.Spider):
         yield record
 
     def parse(self, response):       
-        finish  = True                
-        categoria=""
-        tab=""
-        if 'Air+Max' in response.url :
-            tab = 'air-max' 
-            categoria = 'restock'
-        elif 'air-force' in response.url: 
-            tab = 'air-force' 
-            categoria = 'restock'
-        elif 'Jordan' in response.url:
-            tab = 'air-jordan' 
-            categoria = 'restock'       
+        finish  = True   
+        tab="magicfeet_lancamentos"           
+        categoria = 'magicfeet_lancamentos'       
         
         #pega todos os ites da pagina, apenas os nomes dos tenis
-        items = [ name for name in response.xpath('//div[@class="product-item-container"]') ]
+        items = [ name for name in response.xpath('//div[@class="shelf-item"]') ]
 
         if(len(items) > 0 ):
-            finish = True
+            finish = False
 
         #pega todos os nomes da tabela, apenas os nomes    
         results = self.database.search(['id'],{
@@ -87,10 +81,9 @@ class ArtwalkSnkrsSpider(scrapy.Spider):
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
         for item in items:  
-            name = item.xpath('.//h3//text()').get()
-            prod_url = item.xpath('.//a/@href').get()
-            codigo_parts = prod_url.split('-')            
-            codigo = 'ID{}$'.format(''.join(codigo_parts[-3:]))
+            name = item.xpath('.//h3//a/@title').get()
+            prod_url = item.xpath('.//a/@href').get()            
+            codigo = 'ID{}$'.format(item.xpath('./@data-product-id').get())
 
             record = Inserter()
             record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
@@ -100,7 +93,10 @@ class ArtwalkSnkrsSpider(scrapy.Spider):
             record['name']=name 
             record['categoria']=categoria 
             record['tab']=tab 
-            record['send']='avisar'           
+            record['send']='avisar'       
+            record['imagens']=''  
+            record['tamanhos']=''    
+            record['price']=''      
             self.add_name(tab, str(codigo))
             if len( [id for id in rows if str(id) == str(codigo)]) == 0:     
                 yield record

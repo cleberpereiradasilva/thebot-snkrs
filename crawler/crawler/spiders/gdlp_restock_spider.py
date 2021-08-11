@@ -1,20 +1,30 @@
 import scrapy
 import json
 from datetime import datetime
-from crawler.items import Inserter, Updater, Deleter
-from data.database import Database
+try:
+    from crawler.crawler.items import Inserter, Updater, Deleter
+    from crawler.data.database import Database
+except:
+    from crawler.items import Inserter, Updater, Deleter
+    from data.database import Database
 
 
-class GdlpSnkrsSpider(scrapy.Spider):
-    name = "gdlp_snkrs"
+class GdlpRestockSpider(scrapy.Spider):
+    name = "gdlp_restock"
     encontrados = {}   
-    database = Database()
+    def __init__(self, database=None):
+        if database == None:
+            self.database = Database()
+        else:    
+            self.database = database
+
 
     def start_requests(self):       
         urls = [            
             'https://gdlp.com.br/calcados/adidas',
             'https://gdlp.com.br/calcados/nike',
             'https://gdlp.com.br/calcados/air-jordan',
+            'https://gdlp.com.br/calcados/new-balance'
         ]
         for url in urls:
             yield scrapy.Request(url=url, callback=self.parse)  
@@ -26,8 +36,7 @@ class GdlpSnkrsSpider(scrapy.Spider):
         else:
             self.encontrados[tab] = [name]
 
-    def details(self, response):
-        print(response.url)
+    def details(self, response):       
         opcoes_list = []
         images_list = []
         images = response.xpath('//div[@class="product-img-box"]//a/@data-image').getall()
@@ -53,11 +62,11 @@ class GdlpSnkrsSpider(scrapy.Spider):
     def parse(self, response):       
         finish  = True
         tab = response.url.replace('?','/').split('/')[4]  
-        categoria = 'restock' 
+        categoria = 'gdlp_restock' 
         #pega todos os ites da pagina, apenas os nomes dos tenis
         items = [ name for name in response.xpath('//li[@class="item last"]') ]
         if(len(items) > 0 ):
-            finish = True
+            finish = False
         
         #pega todos os nomes da tabela, apenas os nomes    
         results = self.database.search(['id'],{
@@ -81,7 +90,10 @@ class GdlpSnkrsSpider(scrapy.Spider):
             record['name']=name 
             record['categoria']=categoria 
             record['tab']=tab 
-            record['send']='avisar'           
+            record['send']='avisar' 
+            record['imagens']=''  
+            record['tamanhos']=''    
+            record['price']=''            
             self.add_name(tab, str(codigo))
             if len( [id for id in rows if str(id) == str(codigo)]) == 0:     
                 yield record 
