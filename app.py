@@ -61,7 +61,10 @@ class MyClient(discord.Client):
         self.my_background_task.start()       
         self.database = Database()
         self.first_time = self.database.isEmpty()
-        self.channels = channels if channels != None else json.loads(self.database.get_config().replace("'",'"'))
+        try:
+            self.channels = channels if channels != None else json.loads(self.database.get_config().replace("'",'"'))
+        except:
+            self.channels = {}
 
     async def show_channels(self, adm_channel):
         send_to = self.get_channel(int(adm_channel))
