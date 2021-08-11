@@ -122,19 +122,19 @@ class MyClient(discord.Client):
     async def my_background_task(self):        
         spiders = [
             MazeSnkrsSpider,
-            # ArtwalkCalendarioSpider,
-            # ArtwalkNovidadesSpider,
-            # NikeNovidadesSpider,
-            # ArtwalkRestockSpider,
-            # GdlpNovidadesSpider,
-            # GdlpRestockSpider,
-            # NikeCalendarioSpider,
-            # MagicfeetNovidadesSpider,
-            # MagicfeetSnkrsSpider,
-            # MazeNovidadesSpider,
-            # MazeRestockSpider,
-            # MazeSnkrsSpider,
-            # NikeRestockSpider,
+            ArtwalkCalendarioSpider,
+            ArtwalkNovidadesSpider,
+            NikeNovidadesSpider,
+            ArtwalkRestockSpider,
+            GdlpNovidadesSpider,
+            GdlpRestockSpider,
+            NikeCalendarioSpider,
+            MagicfeetNovidadesSpider,
+            MagicfeetSnkrsSpider,
+            MazeNovidadesSpider,
+            MazeRestockSpider,
+            MazeSnkrsSpider,
+            NikeRestockSpider,
         ]   
 
         
