@@ -1,7 +1,7 @@
 import sqlite3
 import os
 import logging
-
+import sys
 class Sqlite(): 
     def __init__(self):        
         logging.log(logging.DEBUG, "Connecting Database ...")           
@@ -10,7 +10,7 @@ class Sqlite():
         cursor = database.cursor()
         try:
             cursor.execute('''CREATE TABLE products
-                    (created_at text, spider text, id text, url text, name text, price text, categoria text, tab text, imagens text, tamanhos text, send text)''')            
+                    (created_at text, spider text, id text, codigo text, url text, name text, price text, categoria text, tab text, imagens text, tamanhos text, send text, outros text)''')            
         except:
             pass
 
@@ -34,22 +34,39 @@ class Sqlite():
         self.database.commit()
         return self.get_config()
 
-    def insert(self, item):        
-        self.cursor.execute("insert into products(created_at ,spider ,id ,url ,name ,categoria ,tab ,send, imagens, tamanhos, price ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-            (
-                item['created_at'],
-                item['spider'],
-                item['codigo'], 
-                item['prod_url'], 
-                item['name'], 
-                item['categoria'], 
-                item['tab'], 
-                item['send'],
-                item['imagens'], 
-                item['tamanhos'],
-                item['price']
-            ))
-        self.database.commit()             
+    def insert(self, item):  
+        try:      
+            self.cursor.execute("insert into products(created_at ,spider ,id ,codigo, url ,name ,categoria ,tab ,send, imagens, tamanhos, price, outros ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+                (
+                    item['created_at'],
+                    item['spider'],
+                    item['id'], 
+                    item['codigo'], 
+                    item['prod_url'], 
+                    item['name'], 
+                    item['categoria'], 
+                    item['tab'], 
+                    item['send'],
+                    item['imagens'], 
+                    item['tamanhos'],
+                    item['price'],
+                    item['outros']                
+                ))
+            self.database.commit()
+            results = self.search(['id'],{
+                'id':item['id']                
+            })[0][0]            
+            if results == item['id'] == False:  
+                logging.log(logging.ERROR, "Erro ao inserir {}".format(item['url']))                              
+                print("====== Erro ao inserir =============")
+                print(item['url'])                
+                print("====== Erro ao inserir =============")
+
+        except sqlite3.Error as er:
+            print('SQLite error: %s' % (' '.join(er.args)))
+            print("Exception class is: ", er.__class__)
+            print('SQLite traceback: ')            
+            
     
     def update(self, item):
         self.cursor.execute("update products set imagens = ?, tamanhos = ? where url = ? ", 
@@ -74,9 +91,9 @@ class Sqlite():
         query = 'SELECT {} FROM products where {}'.format(','.join(fields), ' and '.join(['{}="{}"'.format(k, item[k]) for k in item.keys()]) )
         return [row for row in self.cursor.execute(query)]
 
-    def avisos(self, spider):
-        query = 'SELECT id, name, url, imagens, tamanhos FROM products where send="avisar" and spider="{}"'.format(spider)        
-        return [{'id': row[0], 'name': row[1], 'url': row[2], 'imagens': row[3].split('|'), 'tamanhos': row[4].split('|') } for row in self.cursor.execute(query)]
+    def avisos(self, categoria):
+        query = 'SELECT id, name, url, imagens, tamanhos, price, codigo, outros FROM products where send="avisar" and categoria="{}"'.format(categoria)        
+        return [{'id': row[0], 'name': row[1], 'url': row[2], 'imagens': row[3].split('|'), 'tamanhos': row[4], 'price' : row[5], 'codigo': row[6], 'outros' : row[7].split('|') } for row in self.cursor.execute(query)]
 
     def isEmpty(self):
         rows = [row[0] for row in self.cursor.execute('SELECT count(id) FROM products')][0]           

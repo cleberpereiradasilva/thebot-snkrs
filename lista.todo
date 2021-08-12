@@ -93,7 +93,7 @@
 ✔ Resolver o runner @done (10/08/2021 18:31:47)
 
 ✔ fazer um singleton @done (10/08/2021 22:05:17)
-☐ Fazer um test de stress
+✔ Fazer um test de stress @done (11/08/2021 14:59:47)
 ✔ Criar variaveis de ambiente @done (10/08/2021 20:47:07)
 
 ✔ Fazer mapa dos links e seus grupos @done (10/08/2021 17:20:14)
@@ -103,11 +103,11 @@
 ✔ Colocar mais detalhes dos produtos nas mensagens @done (10/08/2021 17:20:16)
 
 --------- prŕoximos passos ------------
+☐ Refazer o layout
 ☐ Colocar proxy
 ☐ O site da Nike realmetne está bloqueando, vou ter que deixar preparado para um proxy
 ✔ Separar as configurações para permitir você editar os canais @done (10/08/2021 20:46:58)
 ☐ Fazer os vídeos explicativos
-☐ Refazer o layout
 ✔ Revisar @done (10/08/2021 22:05:24)
 ☐ Empacotar tudo
 ☐ Fim =D

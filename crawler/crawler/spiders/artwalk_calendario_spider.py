@@ -1,5 +1,4 @@
 import scrapy
-import requests
 from datetime import datetime
 try:
     from crawler.crawler.items import Inserter, Updater, Deleter
@@ -32,35 +31,10 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
         else:
             self.encontrados[tab] = [name]   
 
-    def details(self, response):
-        images_list = []
-        opcoes_list = []
-        images = response.xpath('//div[@class="box-banner"]//img/@src').getall()
-        for imagem in images:            
-            images_list.append(imagem)             
-        id_prod = response.xpath('//div[@class="id-prod"]/text()').get()
-        if id_prod:
-            url = 'https://www.artwalk.com.br/api/catalog_system/pub/products/variations/{}'.format(id_prod)           
-            #usei o request porque estava dando erro 500 com o scrapy
-            items = requests.get(url=url).json()
-            for item in items['skus']:
-                if item['available'] == True:
-                    if int(item['availablequantity']) == 1:                        
-                        opcoes_list.append('1 par tamanho {} por {}'.format(item['dimensions']['Tamanho'], item['bestPriceFormated']))
-                    if int(item['availablequantity']) > 1:                        
-                        opcoes_list.append('{} pares tamanho {} por {}'.format(item['availablequantity'], item['dimensions']['Tamanho'], item['bestPriceFormated']))                                    
-
-        record = Updater()        
-        record['prod_url']=response.url 
-        record['imagens']="|".join(images_list) 
-        record['tamanhos']="|".join(opcoes_list) 
-        yield record     
-        
-        
 
     def parse(self, response):                        
-        tab = 'artwalker_snkrs' 
-        categoria = 'artwalker_snkrs' 
+        tab = 'artwalk_snkrs' 
+        categoria = 'artwalk_snkrs' 
         
         #pega todos os ites da pagina, apenas os nomes dos tenis
         items = [ name for name in response.xpath('//div[@class="box-banner"]') ]
@@ -77,12 +51,12 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
         for item in items:  
             prod_url = 'https://www.artwalk.com.br{}'.format(item.xpath('.//a/@href').get())
             name = item.xpath('.//a//img/@alt').get()
-            codigo = 'ID{}$'.format(name.replace(' ',''))
-
+            codigo = 'ID{}$'.format(name.replace(' ',''))            
             record = Inserter()
+            record['id']=codigo 
             record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
             record['spider']=self.name 
-            record['codigo']=codigo 
+            record['codigo']=''
             record['prod_url']=prod_url 
             record['name']=name 
             record['categoria']=categoria 
@@ -90,10 +64,11 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
             record['send']='avisar'    
             record['imagens']=''  
             record['tamanhos']=''    
+            record['outros']=''
             record['price']=''
             self.add_name(tab, str(codigo))
             if len( [id for id in rows if str(id) == str(codigo)]) == 0:     
-                yield record
+                yield scrapy.Request(url=prod_url, callback=self.details, meta=dict(record=record))
         
         
         #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
@@ -101,23 +76,23 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
                 'spider':self.name,
                 'categoria':categoria,
                 'tab': tab
-        })        
-        rows = [str(row[0]).strip() for row in results]            
+        })   
+        rows = [str(row[0]).strip() for row in results]
         for row in rows:                    
-            if len( [id for id in self.encontrados[tab] if str(id) == str(row)]) == 0 :                                                         
+            if len( [id_enc for id_enc in self.encontrados[tab] if str(id_enc) == str(row)]) == 0 :                                                         
                 record = Deleter()
                 record['id']=row                     
-                yield record       
+                yield record
 
-        results = self.database.search(['url'],{
-                'spider':self.name,
-                'categoria':categoria,
-                'tab': tab,
-                'send':'avisar'
-            })        
-        rows = [str(row[0]).strip() for row in results]      
-        for row in rows:                                
-            yield scrapy.Request(url=row, callback=self.details)
+    def details(self, response):
+        record = Inserter()
+        record = response.meta['record'] 
+        images_list = []        
+        images = response.xpath('//div[@class="box-banner"]//img/@src').getall()
+        for imagem in images:            
+            images_list.append(imagem) 
+        record['imagens']="|".join(images_list)        
+        yield record              
 
         
 

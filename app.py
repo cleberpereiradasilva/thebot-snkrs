@@ -1,7 +1,10 @@
+import multiprocessing
 import discord
 import scrapy
+import time
 import json
 import os
+from datetime import datetime
 from multiprocessing import Process, Queue
 from twisted.internet import reactor
 from scrapy.crawler import CrawlerRunner
@@ -29,7 +32,7 @@ from discord.ext import tasks
 from scrapy.settings import Settings
 
 
-async def run_spider(spider, database):
+def run_spider(spider, database):
     def f(q):
         try:
             crawler_settings = Settings()
@@ -53,18 +56,45 @@ async def run_spider(spider, database):
     if result is not None:
         raise result
 
+def r_spiders():
+    database = Database()
+    spiders = [
+            # MazeSnkrsSpider,
+            # MazeNovidadesSpider,
+            # MazeRestockSpider,
+            #ArtwalkCalendarioSpider,
+            #ArtwalkNovidadesSpider,
+            ArtwalkRestockSpider,            
+            # GdlpNovidadesSpider,
+            # GdlpRestockSpider,            
+            # MagicfeetNovidadesSpider,
+            # MagicfeetSnkrsSpider,
+            # NikeRestockSpider,
+    ]       # NikeNovidadesSpider,                
+            # NikeCalendarioSpider,
+
+    for spider in spiders:  
+        run_spider(spider, database)
+
+def r_forever():
+    n = 30
+    while True:
+        r_spiders()
+        print('Aguardando {}s'.format(n))
+        time.sleep(n)
 
 class MyClient(discord.Client):
     def __init__(self, channels=None, *args, **kwargs,):
         super().__init__(*args, **kwargs)        
-        # start the task to run in the background
-        self.my_background_task.start()       
+        # start the task to run in the background        
         self.database = Database()
         self.first_time = self.database.isEmpty()
         try:
             self.channels = channels if channels != None else json.loads(self.database.get_config().replace("'",'"'))
         except:
             self.channels = {}
+        self.my_background_task.start()
+        
 
     async def show_channels(self, adm_channel):
         send_to = self.get_channel(int(adm_channel))
@@ -95,8 +125,9 @@ class MyClient(discord.Client):
             await send_to.send("Erro ao atualizar os dados! Nada foi perdido.")
         return 
 
-    async def on_message(self, message):         
+    async def on_message(self, message):             
         adm_channel = os.environ.get('ADMIN_CHANNEL')
+
         if adm_channel == None:
             return
 
@@ -118,56 +149,31 @@ class MyClient(discord.Client):
     async def on_ready(self):
         print('Logado...')
     
-    @tasks.loop(seconds=600) # task runs every 15 seconds
-    async def my_background_task(self):        
-        spiders = [
-            MazeSnkrsSpider,
-            ArtwalkCalendarioSpider,
-            ArtwalkNovidadesSpider,
-            NikeNovidadesSpider,
-            ArtwalkRestockSpider,
-            GdlpNovidadesSpider,
-            GdlpRestockSpider,
-            NikeCalendarioSpider,
-            MagicfeetNovidadesSpider,
-            MagicfeetSnkrsSpider,
-            MazeNovidadesSpider,
-            MazeRestockSpider,
-            MazeSnkrsSpider,
-            NikeRestockSpider,
-        ]   
+    @tasks.loop(seconds=25) # task runs every 15 seconds
+    async def my_background_task(self): 
+        for channel in self.channels:
+            channel_id = int(self.channels[channel]['canal'])            
+            send_to = self.get_channel(channel_id)                                       
+            rows = self.database.avisos(channel)                                
+            for row in rows:               
+                tamanhos = json.loads(row['tamanhos']) 
+                tamanho_desc = '\n'.join(['**{}** [**123-123**](https://example.com)'.format(t) for t in [k['tamanho'] for k in tamanhos]])
 
-        
-        for spider in spiders:         
-            await run_spider(spider, self.database)
-            if self.first_time:
-               self.database.avisar_todos()           
-            
-            for channel in self.channels:
-                channel_id = int(self.channels[channel]['canal'])
-                
-                send_to = self.get_channel(channel_id)                
-                rows = self.database.avisos(channel)                                
-                for row in rows:
-                    message = '{}'.format(row['name'])
-                    embed = discord.Embed(title=message, url=row['url'], color=3066993) #,color=Hex code        
-                    embed.set_thumbnail(url=row['imagens'][0])                    
-                    content = '\n'.join(row['tamanhos'])
-                    titulo = 'Data' if 'Disponível em' in content else 'Tamanhos'
-                    embed.add_field(name=titulo, value=content)                    
-                    await send_to.send(embed=embed)  
-                    self.database.avisado(row['id'])        
-        
-        self.created = True
-        
-        
+                message = '{}'.format(row['name'])
+                embed = discord.Embed(title=message, url=row['url'], 
+                    description='**Código de estilos: ** {}\n**Preço: ** {}\n\n**Tamanhos**\n{}\n\n**Links Alternativos**\n'.format(row['codigo'],row['price'], tamanho_desc), color=3066993) #,color=Hex code        
+                embed.set_thumbnail(url=row['imagens'][0]) 
+
+                for idx, outros in enumerate(row['outros'][:3]):                    
+                    embed.add_field(name='Link {}'.format(idx+1), value='[**aqui**]({})'.format(outros), inline=True)
+                await send_to.send(embed=embed)
+                self.database.avisado(row['id'])  
 
     @my_background_task.before_loop
     async def before_my_task(self):
         await self.wait_until_ready() # wait until the bot logs in
 
-
-if __name__ == '__main__':    
+def r_discord():
     key = os.environ.get('DISCORD_SERVER_KEY')
     if key:
         client = MyClient()
@@ -176,3 +182,18 @@ if __name__ == '__main__':
         import config_local as config        
         client = MyClient()
         client.run(config.key)
+
+
+
+if __name__ == '__main__':
+    database = Database()
+    first_time = database.isEmpty()
+    if first_time:
+        r_spiders()
+        r_spiders()
+        r_spiders()
+        database.avisar_todos()    
+    #p1 = multiprocessing.Process(name='p1', target=r_forever)
+    p2 = multiprocessing.Process(name='p2', target=r_discord)
+    #p1.start()
+    p2.start()   

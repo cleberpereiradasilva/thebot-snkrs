@@ -6,6 +6,7 @@
 import scrapy
 
 class Inserter(scrapy.Item):    
+    id = scrapy.Field()
     created_at = scrapy.Field()
     spider = scrapy.Field()
     codigo = scrapy.Field()
@@ -16,6 +17,7 @@ class Inserter(scrapy.Item):
     send = scrapy.Field()
     imagens = scrapy.Field()
     tamanhos = scrapy.Field()
+    outros = scrapy.Field()
     price = scrapy.Field()
 
 class Updater(scrapy.Item):

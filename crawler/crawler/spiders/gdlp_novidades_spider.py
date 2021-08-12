@@ -9,7 +9,7 @@ except:
     from data.database import Database
 
 class GdlpNovidadesSpider(scrapy.Spider):
-    name = "gdlp_novidades"
+    name = "gldp_lancamentos"
     encontrados = {}   
     def __init__(self, database=None):
         if database == None:
