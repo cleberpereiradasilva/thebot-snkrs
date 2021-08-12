@@ -55,7 +55,7 @@ class ArtwalkNovidadesSpider(scrapy.Spider):
         if(len(items) > 0 ):
             finish = False
 
-        #pega todos os nomes da tabela, apenas os nomes    
+        #pega todos os nomes da tabela, apenas os ids    
         results = self.database.search(['id'],{
             'spider':self.name,
             'categoria':categoria,
@@ -72,7 +72,7 @@ class ArtwalkNovidadesSpider(scrapy.Spider):
             if disponivel:         
                 if not "Produto indis" in disponivel:                
                     codigo_parts = prod_url.split('-')            
-                    id = 'ID{}$'.format(''.join(codigo_parts[-3:]))
+                    id = 'ID{}$'.format(''.join(codigo_parts[-3:]))                   
                     record = Inserter()
                     record['id']=id 
                     record['codigo']=''

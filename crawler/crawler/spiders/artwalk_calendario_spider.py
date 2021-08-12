@@ -1,4 +1,4 @@
-import scrapy
+import scrapy, json
 from datetime import datetime
 try:
     from crawler.crawler.items import Inserter, Updater, Deleter
@@ -49,16 +49,15 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
         for item in items:  
-            prod_url = 'https://www.artwalk.com.br{}'.format(item.xpath('.//a/@href').get())
-            name = item.xpath('.//a//img/@alt').get()
-            codigo = 'ID{}$'.format(name.replace(' ',''))            
+            prod_url = 'https://www.artwalk.com.br{}'.format(item.xpath('.//a/@href').get())            
+            codigo = 'ID{}$'.format(prod_url)                        
             record = Inserter()
             record['id']=codigo 
             record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
             record['spider']=self.name 
             record['codigo']=''
             record['prod_url']=prod_url 
-            record['name']=name 
+            record['name']='' 
             record['categoria']=categoria 
             record['tab']=tab 
             record['send']='avisar'    
@@ -66,7 +65,7 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
             record['tamanhos']=''    
             record['outros']=''
             record['price']=''
-            self.add_name(tab, str(codigo))
+            self.add_name(tab, str(codigo))            
             if len( [id for id in rows if str(id) == str(codigo)]) == 0:     
                 yield scrapy.Request(url=prod_url, callback=self.details, meta=dict(record=record))
         
@@ -84,14 +83,21 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
                 record['id']=row                     
                 yield record
 
-    def details(self, response):
+    def details(self, response):        
         record = Inserter()
         record = response.meta['record'] 
         images_list = []        
         images = response.xpath('//div[@class="box-banner"]//img/@src').getall()
+        aguardando = response.xpath('//div[@class="data-lanc"]/text()').get()        
+        record['name'] = response.xpath('//h1[@class="name-produto"]/text()').get()
         for imagem in images:            
             images_list.append(imagem) 
-        record['imagens']="|".join(images_list)        
+        record['imagens']="|".join(images_list)    
+        quando = 'Aguarde...'.ljust(18, '\u200B')
+        if aguardando:
+            quando = 'Lançamento 10/10/2010 às 10H'.format(aguardando)        
+            
+        record['tamanhos']=json.dumps([{"aguardando": quando}])
         yield record              
 
         

@@ -55,17 +55,21 @@ class Sqlite():
             self.database.commit()
             results = self.search(['id'],{
                 'id':item['id']                
-            })[0][0]            
-            if results == item['id'] == False:  
+            })[0][0] 
+            if results == item['id']:
+                return True
+            if results == item['id'] == False:                  
                 logging.log(logging.ERROR, "Erro ao inserir {}".format(item['url']))                              
                 print("====== Erro ao inserir =============")
                 print(item['url'])                
                 print("====== Erro ao inserir =============")
+                return False
 
         except sqlite3.Error as er:
             print('SQLite error: %s' % (' '.join(er.args)))
             print("Exception class is: ", er.__class__)
-            print('SQLite traceback: ')            
+            print('SQLite traceback: ')       
+            return False     
             
     
     def update(self, item):
@@ -91,7 +95,7 @@ class Sqlite():
         query = 'SELECT {} FROM products where {}'.format(','.join(fields), ' and '.join(['{}="{}"'.format(k, item[k]) for k in item.keys()]) )
         return [row for row in self.cursor.execute(query)]
 
-    def avisos(self, categoria):
+    def avisos(self, categoria):        
         query = 'SELECT id, name, url, imagens, tamanhos, price, codigo, outros FROM products where send="avisar" and categoria="{}"'.format(categoria)        
         return [{'id': row[0], 'name': row[1], 'url': row[2], 'imagens': row[3].split('|'), 'tamanhos': row[4], 'price' : row[5], 'codigo': row[6], 'outros' : row[7].split('|') } for row in self.cursor.execute(query)]
 

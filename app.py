@@ -62,8 +62,8 @@ def r_spiders():
             # MazeSnkrsSpider,
             # MazeNovidadesSpider,
             # MazeRestockSpider,
-            #ArtwalkCalendarioSpider,
-            #ArtwalkNovidadesSpider,
+            ArtwalkCalendarioSpider,
+            ArtwalkNovidadesSpider,
             ArtwalkRestockSpider,            
             # GdlpNovidadesSpider,
             # GdlpRestockSpider,            
@@ -148,25 +148,40 @@ class MyClient(discord.Client):
         
     async def on_ready(self):
         print('Logado...')
+
+    def create_link(self, data, last):
+        if 'tamanho' in data.keys():
+            if 'url' in data.keys():
+                return '**{}** [**{}**]({})| '.format(data['tamanho'], data['url']['label'], data['url']['href'])
+            else:
+                return '**{}**{} '.format(data['tamanho'], ' e' if last else ',')
+
+        if 'aguardando' in data.keys():
+            return '**{}**  '.format(data['aguardando'])
     
-    @tasks.loop(seconds=25) # task runs every 15 seconds
+    @tasks.loop(seconds=15) # task runs every 15 seconds
     async def my_background_task(self): 
-        for channel in self.channels:
+        for channel in self.channels:        
             channel_id = int(self.channels[channel]['canal'])            
             send_to = self.get_channel(channel_id)                                       
             rows = self.database.avisos(channel)                                
             for row in rows:               
                 tamanhos = json.loads(row['tamanhos']) 
-                tamanho_desc = '\n'.join(['**{}** [**123-123**](https://example.com)'.format(t) for t in [k['tamanho'] for k in tamanhos]])
+                tamanho_desc = ''.join([self.create_link(k, (idt+1) == (len(tamanhos)-1)) for idt, k in enumerate(tamanhos)])[:-2].replace('|','\n')
 
                 message = '{}'.format(row['name'])
-                embed = discord.Embed(title=message, url=row['url'], 
-                    description='**Código de estilos: ** {}\n**Preço: ** {}\n\n**Tamanhos**\n{}\n\n**Links Alternativos**\n'.format(row['codigo'],row['price'], tamanho_desc), color=3066993) #,color=Hex code        
-                embed.set_thumbnail(url=row['imagens'][0]) 
-
-                for idx, outros in enumerate(row['outros'][:3]):                    
-                    embed.add_field(name='Link {}'.format(idx+1), value='[**aqui**]({})'.format(outros), inline=True)
-                await send_to.send(embed=embed)
+                if 'aguardando' in row['tamanhos']:
+                    embed = discord.Embed(title=message, url=row['url'], 
+                        description=tamanho_desc, color=3066993) #,color=Hex code        
+                    embed.set_thumbnail(url=row['imagens'][0])                                                        
+                    await send_to.send(embed=embed)
+                else:
+                    embed = discord.Embed(title=message, url=row['url'], 
+                        description='**Código de estilos: ** {}\n**Preço: ** {}\n\n**Tamanhos**\n{}\n\n**Links Alternativos**\n'.format(row['codigo'],row['price'], tamanho_desc), color=3066993) #,color=Hex code        
+                    embed.set_thumbnail(url=row['imagens'][0])                
+                    for idx, outros in enumerate(row['outros'][1:3]):                    
+                        embed.add_field(name='Link {}'.format(idx+1), value='[**aqui**]({})'.format(outros), inline=True)                    
+                    await send_to.send(embed=embed)
                 self.database.avisado(row['id'])  
 
 
@@ -187,14 +202,16 @@ def r_discord():
 
 
 if __name__ == '__main__':
-    database = Database()
+    database = Database()   
     first_time = database.isEmpty()
     if first_time:
-        r_spiders()
-        r_spiders()
-        r_spiders()
-        database.avisar_todos()    
-    #p1 = multiprocessing.Process(name='p1', target=r_forever)
+        for i in range(0,10):
+            r_spiders()
+        database.avisar_todos()
+    
+    p1 = multiprocessing.Process(name='p1', target=r_forever)    
+    p1.start()
+
     p2 = multiprocessing.Process(name='p2', target=r_discord)
-    #p1.start()
-    p2.start()   
+    p2.start()
+    

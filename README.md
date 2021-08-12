@@ -86,11 +86,7 @@ NOVIDADES
 
 
 
-{
-  "artwalk_lancamentos": {
-    "canal": 874768590228815913,
-    "mensagem": "Novo Artwalker Lan\u00e7amento"
-  },
+{  
   "artwalk_restock": {
     "canal": 874768385634893874,
     "mensagem": "Novo Artwalker Restock"
@@ -99,6 +95,10 @@ NOVIDADES
     "canal": 874768489896898650,
     "mensagem": "Novo Artwalker Snkrs"
   },
+  "artwalk_lancamentos": {
+    "canal": 874768590228815913,
+    "mensagem": "Novo Artwalker Lan\u00e7amento"
+  },    
   "guadalupe_lancamentos": {
     "canal": 874768651545354330,
     "mensagem": "Novo GDLP Lan\u00e7amento"
