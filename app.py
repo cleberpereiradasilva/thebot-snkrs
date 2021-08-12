@@ -169,6 +169,7 @@ class MyClient(discord.Client):
                 await send_to.send(embed=embed)
                 self.database.avisado(row['id'])  
 
+
     @my_background_task.before_loop
     async def before_my_task(self):
         await self.wait_until_ready() # wait until the bot logs in
