@@ -36,8 +36,8 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
         scripts = response.xpath('//script/text()').getall()
         for script in scripts:
             if '&sl=' in script:
-                url='https://www.magicfeet.com.br{}1'.format(script.split('load(\'')[1].split('\'')[0])                               
                 sl=script.split('load(\'')[1].split('\'')[0]
+                url='https://www.magicfeet.com.br{}1'.format(sl) 
                 yield scrapy.Request(url=url, callback=self.parse, meta=dict(sl=sl))  
    
 
@@ -73,9 +73,10 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
             codigo = 'ID{}$'.format(item.xpath('./@data-product-id').get())
             price = item.xpath('.//span[@itemprop="price"]/text()').get()
             record = Inserter()
+            record['id']=codigo 
             record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
             record['spider']=self.name 
-            record['codigo']=codigo 
+            record['codigo']=''
             record['prod_url']=prod_url 
             record['name']=name 
             record['categoria']=categoria 
@@ -84,7 +85,7 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
             record['imagens']=''  
             record['tamanhos']=''    
             record['outros']=''
-            record['price']='R$ {}'.format(price)            
+            record['price']=format(price)
             self.add_name(tab, str(id))
             if len( [id_db for id_db in rows if str(id_db) == str(id)]) == 0:  
                 yield scrapy.Request(url=prod_url, callback=self.details, meta=dict(record=record, sl=sl))
@@ -94,7 +95,7 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
             part = uri[0]
             page = int(uri[1]) + 1
             url = '{}&PageNumber={}'.format(part, str(page))
-            yield scrapy.Request(url=url, callback=self.parse)
+            yield scrapy.Request(url=url, callback=self.parse, meta=dict(sl=response.meta['sl']))
         else:
             #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
             results = self.database.search(['id'],{
@@ -136,7 +137,7 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
         record['imagens']="|".join(images_list) 
         record['tamanhos']=json.dumps(opcoes_list)
         
-        url = 'https://www.artwalk.com.br/buscapagina?PS=999&sl={}&cc=999&sm=0&fq=spec_fct_15:{}'.format(sl,productReference)
+        url = 'https://www.magicfeet.com.br/buscapagina?PS=999&sl={}&cc=999&sm=0&fq=spec_fct_15:{}'.format(sl,productReference)
         yield scrapy.Request(url=url, callback=self.other_links, meta=dict(record=record))
     
     def other_links(self, response):
