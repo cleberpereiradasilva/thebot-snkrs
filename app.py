@@ -59,14 +59,18 @@ def run_spider(spider, database):
 def r_spiders():
     database = Database()
     spiders = [
+            #ArtwalkCalendarioSpider,
+            #ArtwalkNovidadesSpider,
+            #ArtwalkRestockSpider,            
+            GdlpNovidadesSpider,
+            GdlpRestockSpider,            
+
+
             # MazeSnkrsSpider,
             # MazeNovidadesSpider,
             # MazeRestockSpider,
-            ArtwalkCalendarioSpider,
-            ArtwalkNovidadesSpider,
-            ArtwalkRestockSpider,            
-            # GdlpNovidadesSpider,
-            # GdlpRestockSpider,            
+            
+            
             # MagicfeetNovidadesSpider,
             # MagicfeetSnkrsSpider,
             # NikeRestockSpider,
@@ -172,12 +176,17 @@ class MyClient(discord.Client):
                 message = '{}'.format(row['name'])
                 if 'aguardando' in row['tamanhos']:
                     embed = discord.Embed(title=message, url=row['url'], 
-                        description=tamanho_desc, color=3066993) #,color=Hex code        
-                    embed.set_thumbnail(url=row['imagens'][0])                                                        
+                        description=tamanho_desc, color=3066993) #,color=Hex code
+                    embed.set_thumbnail(url=row['imagens'][0])                                               
                     await send_to.send(embed=embed)
                 else:
+                    description_text='**Código de estilos: ** {}\n**Preço: ** {}\n\n'.format(row['codigo'],row['price'])
+                    tamanho_text='**Tamanhos**\n{}'.format(tamanho_desc)
+                    links_text='**Links Alternativos**\n' if len(row['outros'][1:3])>0 else ''
+
+
                     embed = discord.Embed(title=message, url=row['url'], 
-                        description='**Código de estilos: ** {}\n**Preço: ** {}\n\n**Tamanhos**\n{}\n\n**Links Alternativos**\n'.format(row['codigo'],row['price'], tamanho_desc), color=3066993) #,color=Hex code        
+                        description='{}{}{}'.format(description_text,tamanho_text,links_text ), color=3066993) #,color=Hex code        
                     embed.set_thumbnail(url=row['imagens'][0])                
                     for idx, outros in enumerate(row['outros'][1:3]):                    
                         embed.add_field(name='Link {}'.format(idx+1), value='[**aqui**]({})'.format(outros), inline=True)                    

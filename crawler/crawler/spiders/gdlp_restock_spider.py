@@ -36,28 +36,7 @@ class GdlpRestockSpider(scrapy.Spider):
         else:
             self.encontrados[tab] = [name]
 
-    def details(self, response):       
-        opcoes_list = []
-        images_list = []
-        images = response.xpath('//div[@class="product-img-box"]//a/@data-image').getall()
-        for imagem in images:
-            images_list.append(imagem)        
-        items = response.xpath('//script/text()').getall()  
-        price = response.xpath('//span[@class="price"]/text()').get()        
-        for item in items:   
-            if('new Product.Config(' in item):                
-                tamanhos = item.split('(')[1].split(');')[0].strip()                                
-                options = json.loads(tamanhos)['attributes']                
-                for k in options.keys():
-                    for option in options[k]['options']:
-                        if len(option['products']) > 0:
-                            opcoes_list.append(('{} {} por {}'.format(options[k]['label'], option['label'], option['price'] if option['price'] != '0' else price)))
-
-        record = Updater()        
-        record['prod_url']=response.url 
-        record['imagens']="|".join(images_list) 
-        record['tamanhos']="|".join(opcoes_list) 
-        yield record
+    
 
     def parse(self, response):       
         finish  = True
@@ -80,23 +59,26 @@ class GdlpRestockSpider(scrapy.Spider):
         for item in items:  
             name = item.xpath('.//h2//a/text()').get()
             prod_url = item.xpath('.//a/@href').get()
-            codigo = 'ID{}$'.format(prod_url.split('/')[-1])
-
+            id_price = item.xpath('.//span[@class="regular-price"]/@id').get()           
+            id = 'ID{}$'.format(id_price.split('-')[-1].split('_')[0])
+            price = item.xpath('.//span[@class="price"]/text()').get()
             record = Inserter()
+            record['id']=id 
             record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
             record['spider']=self.name 
-            record['codigo']=codigo 
+            record['codigo']=id_price.split('-')[-1].split('_')[0] 
             record['prod_url']=prod_url 
             record['name']=name 
             record['categoria']=categoria 
             record['tab']=tab 
-            record['send']='avisar' 
+            record['send']='avisar'      
             record['imagens']=''  
             record['tamanhos']=''    
-            record['price']=''            
-            self.add_name(tab, str(codigo))
-            if len( [id for id in rows if str(id) == str(codigo)]) == 0:     
-                yield record 
+            record['price']=price          
+            record['outros']=''      
+            self.add_name(tab, str(id))
+            if len( [id_db for id_db in rows if str(id_db) == str(id)]) == 0:  
+                yield scrapy.Request(url=prod_url, callback=self.details, meta=(dict(record=record)))
         
         if(finish == False):
             paginacao = response.xpath('//div[@class="pages"]//li')
@@ -116,19 +98,32 @@ class GdlpRestockSpider(scrapy.Spider):
                 if len( [id for id in self.encontrados[tab] if str(id) == str(row)]) == 0 :                                                         
                     record = Deleter()
                     record['id']=row                     
-                    yield record
-            
-            results = self.database.search(['url'],{
-                'spider':self.name,
-                'categoria':categoria,
-                'tab': tab,
-                'send':'avisar'
-            })        
-            rows = [str(row[0]).strip() for row in results]      
-            for row in rows:                                
-                yield scrapy.Request(url=row, callback=self.details)
+                    yield record           
+           
 
-        
+    def details(self, response):   
+        record = Inserter()
+        record = response.meta['record']       
+        opcoes_list = []
+        images_list = []
+        images = response.xpath('//div[@class="product-img-box"]//a/@data-image').getall()
+        for imagem in images:
+            images_list.append(imagem)        
+        items = response.xpath('//script/text()').getall()  
+        price = response.xpath('//span[@class="price"]/text()').get()        
+        for item in items:   
+            if('new Product.Config(' in item):                
+                tamanhos = item.split('(')[1].split(');')[0].strip()                                
+                options = json.loads(tamanhos)['attributes']                
+                for k in options.keys():
+                    for option in options[k]['options']:
+                        if len(option['products']) > 0:
+                            opcoes_list.append({'tamanho' : option['label']})
+          
+        record['prod_url']=response.url 
+        record['imagens']="|".join(images_list) 
+        record['tamanhos']=json.dumps(opcoes_list)
+        yield record    
 
       
         
