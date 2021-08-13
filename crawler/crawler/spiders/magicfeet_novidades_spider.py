@@ -36,34 +36,16 @@ class MagicfeetNovidadesSpider(scrapy.Spider):
         for script in scripts:
             if '&sl=' in script:
                 url='https://www.magicfeet.com.br{}1'.format(script.split('load(\'')[1].split('\'')[0])                               
-                yield scrapy.Request(url=url, callback=self.parse)  
+                sl=script.split('load(\'')[1].split('\'')[0]
+                yield scrapy.Request(url=url, callback=self.parse, meta=dict(sl=sl))  
 
-    def details(self, response):
-        images_list = []
-        opcoes_list = []
-        items = response.xpath('//script/text()').getall() 
-        for item in items:   
-            if 'skuJson_' in item and 'productId' in item and not '@context' in item:                
-                tamanhos = '{' + item.split('= {')[1].split('};')[0].strip() + '}'                   
-                data = json.loads(tamanhos)                 
-                skus = data['skus']                                
-                for sku in skus:                                         
-                    if sku['available']:
-                        opcoes_list.append('Tamanho {} por {}'.format(sku['dimensions'][list(sku['dimensions'].keys())[0]],sku['fullSellingPrice']))                
-        images = response.xpath('//div[@class="product-images"]//li//a/@rel').getall()
-        for imagem in images:                        
-            images_list.append(imagem) 
-       
-        record = Updater()        
-        record['prod_url']=response.url 
-        record['imagens']="|".join(images_list) 
-        record['tamanhos']="|".join(opcoes_list) 
-        yield record
+    
 
     def parse(self, response):       
         finish  = True   
         tab="magicfeet_lancamentos"           
-        categoria = 'magicfeet_lancamentos'       
+        categoria = 'magicfeet_lancamentos'
+        sl = response.meta['sl'].split('sl=')[1].split('&')[0]       
         
         #pega todos os ites da pagina, apenas os nomes dos tenis
         items = [ name for name in response.xpath('//div[@class="shelf-item"]') ]
@@ -83,12 +65,13 @@ class MagicfeetNovidadesSpider(scrapy.Spider):
         for item in items:  
             name = item.xpath('.//h3//a/@title').get()
             prod_url = item.xpath('.//a/@href').get()            
-            codigo = 'ID{}$'.format(item.xpath('./@data-product-id').get())
-
+            id = 'ID{}$'.format(item.xpath('./@data-product-id').get())
+            price = item.xpath('.//span[@itemprop="price"]/text()').get()
             record = Inserter()
+            record['id']=id 
             record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
             record['spider']=self.name 
-            record['codigo']=codigo 
+            record['codigo']=''
             record['prod_url']=prod_url 
             record['name']=name 
             record['categoria']=categoria 
@@ -96,10 +79,11 @@ class MagicfeetNovidadesSpider(scrapy.Spider):
             record['send']='avisar'       
             record['imagens']=''  
             record['tamanhos']=''    
-            record['price']=''      
-            self.add_name(tab, str(codigo))
-            if len( [id for id in rows if str(id) == str(codigo)]) == 0:     
-                yield record
+            record['outros']=''
+            record['price']='R$ {}'.format(price)            
+            self.add_name(tab, str(id))
+            if len( [id_db for id_db in rows if str(id_db) == str(id)]) == 0:  
+                yield scrapy.Request(url=prod_url, callback=self.details, meta=dict(record=record, sl=sl))
         
         if(finish == False):
             uri = response.url.split('&PageNumber=')
@@ -120,18 +104,47 @@ class MagicfeetNovidadesSpider(scrapy.Spider):
                     record = Deleter()
                     record['id']=row                     
                     yield record
-            
-            results = self.database.search(['url'],{
-                'spider':self.name,
-                'categoria':categoria,
-                'tab': tab,
-                'send':'avisar'
-            })        
-            rows = [str(row[0]).strip() for row in results]      
-            for row in rows:                                
-                yield scrapy.Request(url=row, callback=self.details)
+          
 
+    def details(self, response):
+        record = Inserter()
+        record = response.meta['record'] 
+        sl = response.meta['sl']   
+        images_list = []
+        opcoes_list = []
+        items = response.xpath('//script/text()').getall() 
+        for item in items:   
+            if 'skuJson_' in item and 'productId' in item and not '@context' in item:                
+                tamanhos = '{' + item.split('= {')[1].split('};')[0].strip() + '}'                   
+                data = json.loads(tamanhos)                 
+                skus = data['skus']                                
+                for sku in skus:                                         
+                    if sku['available']:
+                        opcoes_list.append({'tamanho':sku['dimensions'][list(sku['dimensions'].keys())[0]]})                            
+        images = response.xpath('//div[@class="product-images"]//li//a/@rel').getall()
+        for imagem in images:                        
+            images_list.append(imagem) 
+       
+        record['codigo'] = response.xpath('.//div[contains(@class,"productReference")]/text()').get()
+        productReference = '-'.join(record['codigo'].split('-')[:-1])
+            
+        record['prod_url']=response.url 
+        record['imagens']="|".join(images_list) 
+        record['tamanhos']=json.dumps(opcoes_list)
         
+        url = 'https://www.artwalk.com.br/buscapagina?PS=999&sl={}&cc=999&sm=0&fq=spec_fct_15:{}'.format(sl,productReference)
+        yield scrapy.Request(url=url, callback=self.other_links, meta=dict(record=record))
+
+
+    def other_links(self, response):
+        others = set()
+        record = Inserter()
+        record = response.meta['record']                
+        for item in response.xpath('//a/@href').getall():
+            if item != record['prod_url']:
+                others.add(item)
+        record['outros']='|'.join([o for o in others])
+        yield record
 
       
         

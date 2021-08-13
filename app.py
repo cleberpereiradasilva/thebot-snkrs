@@ -62,13 +62,11 @@ def r_spiders():
             #ArtwalkCalendarioSpider,
             #ArtwalkNovidadesSpider,
             #ArtwalkRestockSpider,            
-            GdlpNovidadesSpider,
-            GdlpRestockSpider,            
-
-
-            # MazeSnkrsSpider,
-            # MazeNovidadesSpider,
-            # MazeRestockSpider,
+            #GdlpNovidadesSpider,
+            #GdlpRestockSpider,            
+            MazeSnkrsSpider,
+            MazeNovidadesSpider,
+            MazeRestockSpider,
             
             
             # MagicfeetNovidadesSpider,

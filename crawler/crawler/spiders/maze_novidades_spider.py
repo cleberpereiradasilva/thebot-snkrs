@@ -9,7 +9,7 @@ except:
     from data.database import Database
 
 class MazeNovidadesSpider(scrapy.Spider):
-    name = "maze_novidades"
+    name = "maze_lancamentos"
     encontrados = {}   
     def __init__(self, database=None):
         if database == None:
@@ -43,28 +43,12 @@ class MazeNovidadesSpider(scrapy.Spider):
         url='https://www.maze.com.br/product/getproductscategory/?path={}&viewList=g&pageSize=12&order=&brand=&category={}&group=&keyWord=&initialPrice=&finalPrice=&variations=&idAttribute=&idEventList=&idCategories=&idGroupingType=&pageNumber=1'.format(path,filter)        
         yield scrapy.Request(url=url, callback=self.parse)
         
-    def details(self, response):        
-        opcoes_list = []
-        images_list = []
-        images = response.xpath('//div[contains(@class,"car-gallery")]//img/@src').getall()
-        for imagem in images:
-            images_list.append('https:{}'.format(imagem))        
-        items = response.xpath('//input[@id="principal-lista-sku"]/@value').get()
-        options = json.loads(items)                
-        for item in options:               
-            for variation in item['Variations']:                                
-                opcoes_list.append(('Tamanho {} por R$ {:.2f}'.format(variation['Name'], item['Price'])))
-
-        record = Updater()        
-        record['prod_url']=response.url 
-        record['imagens']="|".join(images_list) 
-        record['tamanhos']="|".join(opcoes_list) 
-        yield record
+    
 
     def parse(self, response):       
         finish  = True                
         tab = response.url.split('=')[1].split('&')[0]        
-        categoria = 'maze_novidades'
+        categoria = 'maze_lancamentos'
               
         #pega todos os ites da pagina, apenas os nomes dos tenis
         items = [ name for name in response.xpath('//div[@class="ui card produto product-in-card"]') ]
@@ -84,11 +68,13 @@ class MazeNovidadesSpider(scrapy.Spider):
         for item in items:            
             name = item.xpath('.//a/@title').get()
             prod_url = 'https://www.maze.com.br{}'.format(item.xpath('.//a/@href').get())
-            codigo = 'ID{}$'.format(item.xpath('.//meta[@itemprop="productID"]/@content').get())     
+            id = 'ID{}$'.format(item.xpath('.//meta[@itemprop="productID"]/@content').get())   
+            price = item.xpath('.//meta[@itemprop="price"]/@content').get().replace(',','').replace('.',',')            
             record = Inserter()
+            record['id']=id 
             record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
             record['spider']=self.name 
-            record['codigo']=codigo 
+            record['codigo']='' 
             record['prod_url']=prod_url 
             record['name']=name 
             record['categoria']=categoria 
@@ -96,10 +82,11 @@ class MazeNovidadesSpider(scrapy.Spider):
             record['send']='avisar'    
             record['imagens']=''  
             record['tamanhos']=''    
-            record['price']=''         
-            self.add_name(tab, str(codigo))
-            if len( [id for id in rows if str(id) == str(codigo)]) == 0:     
-                yield record
+            record['outros']=''
+            record['price']='R$ {}'.format(price)
+            self.add_name(tab, str(id))
+            if len( [id_db for id_db in rows if str(id_db) == str(id)]) == 0:  
+                yield scrapy.Request(url=prod_url, callback=self.details, meta=(dict(record=record)))
 
         if(finish == False):
             uri = response.url.split('&pageNumber=')
@@ -119,19 +106,27 @@ class MazeNovidadesSpider(scrapy.Spider):
                 if len( [id for id in self.encontrados[tab] if str(id) == str(row)]) == 0 :                                                         
                     record = Deleter()
                     record['id']=row                     
-                    yield record
-            
-            results = self.database.search(['url'],{
-                'spider':self.name,
-                'categoria':categoria,
-                'tab': tab,
-                'send':'avisar'
-            })        
-            rows = [str(row[0]).strip() for row in results]      
-            for row in rows:                                
-                yield scrapy.Request(url=row, callback=self.details)
+                    yield record               
 
-        
+    def details(self, response):  
+        record = Inserter()
+        record = response.meta['record']          
+        opcoes_list = []
+        images_list = []
+        images = response.xpath('//div[contains(@class,"car-gallery")]//img/@src').getall()
+        for imagem in images:
+            images_list.append('https:{}'.format(imagem))        
+        items = response.xpath('//input[@id="principal-lista-sku"]/@value').get()
+        options = json.loads(items)                
+        for item in options:               
+            for variation in item['Variations']:  
+                opcoes_list.append({'tamanho': variation['Name'] })                              
+        record['codigo']=response.xpath('//h6[@class="codProduto"]/text()').get()
+      
+        record['prod_url']=response.url 
+        record['imagens']="|".join(images_list) 
+        record['tamanhos']=json.dumps(opcoes_list)
+        yield record   
 
       
         
