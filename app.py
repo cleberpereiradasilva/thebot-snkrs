@@ -59,21 +59,20 @@ def run_spider(spider, database):
 def r_spiders():
     database = Database()
     spiders = [
-            #ArtwalkCalendarioSpider,
-            #ArtwalkNovidadesSpider,
-            #ArtwalkRestockSpider,            
-            #GdlpNovidadesSpider,
-            #GdlpRestockSpider,            
+            ArtwalkCalendarioSpider,
+            ArtwalkNovidadesSpider,
+            ArtwalkRestockSpider,            
+            GdlpNovidadesSpider,
+            GdlpRestockSpider,            
             MazeSnkrsSpider,
             MazeNovidadesSpider,
             MazeRestockSpider,
-            
-            
-            # MagicfeetNovidadesSpider,
-            # MagicfeetSnkrsSpider,
-            # NikeRestockSpider,
-    ]       # NikeNovidadesSpider,                
-            # NikeCalendarioSpider,
+            MagicfeetNovidadesSpider,
+            MagicfeetSnkrsSpider,
+            NikeRestockSpider,
+            NikeNovidadesSpider,                
+            NikeCalendarioSpider
+    ]
 
     for spider in spiders:  
         run_spider(spider, database)
@@ -86,7 +85,7 @@ def r_forever():
         time.sleep(n)
 
 class MyClient(discord.Client):
-    def __init__(self, channels=None, *args, **kwargs,):
+    def __init__(self, channels=None, *args, **kwargs):
         super().__init__(*args, **kwargs)        
         # start the task to run in the background        
         self.database = Database()
@@ -211,14 +210,16 @@ def r_discord():
 if __name__ == '__main__':
     database = Database()   
     first_time = database.isEmpty()
-    if first_time:
-        for i in range(0,10):
-            r_spiders()
-        database.avisar_todos()
+    r_spiders()
+    # if first_time:
+    #     for i in range(0,10):
+    #         r_spiders()
+    #         time.sleep(1)
+    #     database.avisar_todos()
     
-    p1 = multiprocessing.Process(name='p1', target=r_forever)    
-    p1.start()
+    # p1 = multiprocessing.Process(name='p1', target=r_forever)    
+    # p1.start()
 
-    p2 = multiprocessing.Process(name='p2', target=r_discord)
-    p2.start()
+    # p2 = multiprocessing.Process(name='p2', target=r_discord)
+    # p2.start()
     

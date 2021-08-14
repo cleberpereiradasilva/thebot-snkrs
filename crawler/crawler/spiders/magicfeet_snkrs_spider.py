@@ -24,13 +24,25 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
         ]
         for url in urls:
             yield scrapy.Request(url=url, callback=self.extract_sl)  
-
-
-    def add_name(self, tab, name):
-        if tab in  self.encontrados:
-            self.encontrados[tab].append(name)
+        self.remove()
+       
+    def add_name(self, key, id):
+        if key in  self.encontrados:
+            self.encontrados[key].append(id)
         else:
-            self.encontrados[tab] = [name]
+            self.encontrados[key] = [id]
+
+    def remove(self):
+        #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
+        results = self.database.search(['id'],{
+            'spider':self.name                        
+        })        
+        rows = [str(row[0]).strip() for row in results]            
+        for row in rows:                    
+            if len( [id for id in self.encontrados[self.name] if str(id) == str(row)]) == 0 :                  
+                record = Deleter()
+                record['id']=row                     
+                yield record   
 
     def extract_sl(self, response):
         scripts = response.xpath('//script/text()').getall()
@@ -56,21 +68,20 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
         items = [ name for name in response.xpath('//div[@class="shelf-item"]') ]
 
         if(len(items) > 0 ):
-            finish = False
+            finish = True
 
         #pega todos os nomes da tabela, apenas os nomes    
         results = self.database.search(['id'],{
             'spider':self.name,
-            'categoria':categoria,
-            'tab': tab
+            'categoria':categoria            
         })        
         rows = [str(row[0]).strip() for row in results]
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
-        for item in items:  
+        for item in items[0:5]:
             name = item.xpath('.//h3//a/@title').get()
             prod_url = item.xpath('.//a/@href').get()            
-            codigo = 'ID{}$'.format(item.xpath('./@data-product-id').get())
+            codigo = 'ID{}-{}$'.format(item.xpath('./@data-product-id').get(), tab)
             price = item.xpath('.//span[@itemprop="price"]/text()').get()
             record = Inserter()
             record['id']=codigo 
@@ -96,19 +107,7 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
             page = int(uri[1]) + 1
             url = '{}&PageNumber={}'.format(part, str(page))
             yield scrapy.Request(url=url, callback=self.parse, meta=dict(sl=response.meta['sl']))
-        else:
-            #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
-            results = self.database.search(['id'],{
-                'spider':self.name,
-                'categoria':categoria,
-                'tab': tab
-            })        
-            rows = [str(row[0]).strip() for row in results]            
-            for row in rows:                    
-                if len( [id for id in self.encontrados[tab] if str(id) == str(row)]) == 0 :                                                         
-                    record = Deleter()
-                    record['id']=row                     
-                    yield record
+       
            
 
     def details(self, response):

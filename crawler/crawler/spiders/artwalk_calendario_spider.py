@@ -23,13 +23,25 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
         ]
         for url in urls:
             yield scrapy.Request(url=url, callback=self.parse)  
-
-
-    def add_name(self, tab, name):
-        if tab in  self.encontrados:
-            self.encontrados[tab].append(name)
+        self.remove()
+       
+    def add_name(self, key, id):
+        if key in  self.encontrados:
+            self.encontrados[key].append(id)
         else:
-            self.encontrados[tab] = [name]   
+            self.encontrados[key] = [id]
+
+    def remove(self):
+        #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
+        results = self.database.search(['id'],{
+            'spider':self.name                        
+        })        
+        rows = [str(row[0]).strip() for row in results]            
+        for row in rows:                    
+            if len( [id for id in self.encontrados[self.name] if str(id) == str(row)]) == 0 :                  
+                record = Deleter()
+                record['id']=row                     
+                yield record   
 
 
     def parse(self, response):                        
@@ -42,13 +54,12 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
         #pega todos os nomes da tabela, apenas os nomes    
         results = self.database.search(['id'],{
             'spider':self.name,
-            'categoria':categoria,
-            'tab': tab
+            'categoria':categoria,            
         })        
         rows = [str(row[0]).strip() for row in results]
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
-        for item in items:  
+        for item in items[0:5]:  
             prod_url = 'https://www.artwalk.com.br{}'.format(item.xpath('.//a/@href').get())            
             codigo = 'ID{}$'.format(prod_url)                        
             record = Inserter()
@@ -65,23 +76,9 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
             record['tamanhos']=''    
             record['outros']=''
             record['price']=''
-            self.add_name(tab, str(codigo))            
+            self.add_name(self.name, str(codigo))            
             if len( [id for id in rows if str(id) == str(codigo)]) == 0:     
                 yield scrapy.Request(url=prod_url, callback=self.details, meta=dict(record=record))
-        
-        
-        #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
-        results = self.database.search(['id'],{
-                'spider':self.name,
-                'categoria':categoria,
-                'tab': tab
-        })   
-        rows = [str(row[0]).strip() for row in results]
-        for row in rows:                    
-            if len( [id_enc for id_enc in self.encontrados[tab] if str(id_enc) == str(row)]) == 0 :                                                         
-                record = Deleter()
-                record['id']=row                     
-                yield record
 
     def details(self, response):        
         record = Inserter()
