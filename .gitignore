@@ -1,4 +1,6 @@
 *.db
 *.pyc
+**.pyc
 *.db-journal
 config_local.py
+/env/
