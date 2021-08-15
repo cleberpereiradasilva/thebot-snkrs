@@ -209,17 +209,16 @@ def r_discord():
 
 if __name__ == '__main__':
     database = Database()   
-    first_time = database.isEmpty()
-    r_spiders()
-    # if first_time:
-    #     for i in range(0,10):
-    #         r_spiders()
-    #         time.sleep(1)
-    #     database.avisar_todos()
+    first_time = database.isEmpty()    
+    if first_time:
+        for i in range(0,10):
+            r_spiders()
+            time.sleep(1)
+        database.avisar_todos()
     
-    # p1 = multiprocessing.Process(name='p1', target=r_forever)    
-    # p1.start()
+    p1 = multiprocessing.Process(name='p1', target=r_forever)    
+    p1.start()
 
-    # p2 = multiprocessing.Process(name='p2', target=r_discord)
-    # p2.start()
+    p2 = multiprocessing.Process(name='p2', target=r_discord)
+    p2.start()
     
