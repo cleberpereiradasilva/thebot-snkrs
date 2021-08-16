@@ -39,3 +39,5 @@ w3lib==1.22.0
 yarl==1.6.3
 zope.interface==5.4.0
 requests==2.26.0
+Flask==1.1.2
+gunicorn==20.0.4
