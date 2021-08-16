@@ -52,7 +52,9 @@ class Sqlite():
                     item['price'],
                     item['outros']                
                 ))
-            self.database.commit()
+            self.database.commit()          
+
+
             results = self.search(['id'],{
                 'id':item['id']                
             })[0][0] 
@@ -91,9 +93,18 @@ class Sqlite():
         self.cursor.execute("delete from products where url = '{}' ".format(url))
         self.database.commit()
 
+    def delete_all(self):        
+        self.cursor.execute("delete from products")
+        self.database.commit()
+
     def search(self, fields, item):
-        query = 'SELECT {} FROM products where {}'.format(','.join(fields), ' and '.join(['{}="{}"'.format(k, item[k]) for k in item.keys()]) )
+        query = 'SELECT {} FROM products where {}'.format(','.join(fields), ' and '.join(['lower({})="{}"'.format(k, str(item[k]).lower()) for k in item.keys()]) )
+        print(row for row in self.cursor.execute(query))
         return [row for row in self.cursor.execute(query)]
+    
+    def search_name(self, word):
+        query = 'SELECT url FROM products where lower(name) like "%{}%" or lower(url) like "%{}%"'.format(word.lower(), word.lower())
+        return [row for row in self.cursor.execute(query)]    
 
     def avisos(self, categoria):        
         query = 'SELECT id, name, url, imagens, tamanhos, price, codigo, outros FROM products where send="avisar" and categoria="{}"'.format(categoria)        

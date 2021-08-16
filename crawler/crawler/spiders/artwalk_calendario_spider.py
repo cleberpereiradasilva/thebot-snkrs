@@ -15,9 +15,16 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
             self.database = Database()
         else:    
             self.database = database
+            
+        self.encontrados[self.name] = []
 
+        results = self.database.search(['id'],{
+            'spider':self.name,
+        })        
+        for h in [str(row[0]).strip() for row in results]:
+            self.add_name(self.name, str(h)) 
 
-    def start_requests(self):              
+    def start_requests(self):   
         urls = [
             'https://www.artwalk.com.br/calendario-sneaker',           
         ]
@@ -49,21 +56,14 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
         categoria = 'artwalk_snkrs' 
         
         #pega todos os ites da pagina, apenas os nomes dos tenis
-        items = [ name for name in response.xpath('//div[@class="box-banner"]') ]
-       
-        #pega todos os nomes da tabela, apenas os nomes    
-        results = self.database.search(['id'],{
-            'spider':self.name,
-            'categoria':categoria,            
-        })        
-        rows = [str(row[0]).strip() for row in results]
+        items = [ name for name in response.xpath('//div[@class="box-banner"]') ]      
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
-        for item in items[0:5]:  
+        for item in items:  
             prod_url = 'https://www.artwalk.com.br{}'.format(item.xpath('.//a/@href').get())            
-            codigo = 'ID{}$'.format(prod_url)                        
+            id = 'ID{}$'.format(prod_url)                        
             record = Inserter()
-            record['id']=codigo 
+            record['id']=id 
             record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
             record['spider']=self.name 
             record['codigo']=''
@@ -75,9 +75,9 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
             record['imagens']=''  
             record['tamanhos']=''    
             record['outros']=''
-            record['price']=''
-            self.add_name(self.name, str(codigo))            
-            if len( [id for id in rows if str(id) == str(codigo)]) == 0:     
+            record['price']=''                      
+            if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     
+                self.add_name(self.name, str(id))
                 yield scrapy.Request(url=prod_url, callback=self.details, meta=dict(record=record))
 
     def details(self, response):        

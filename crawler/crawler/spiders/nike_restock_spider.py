@@ -15,6 +15,13 @@ class NikeRestockSpider(scrapy.Spider):
             self.database = Database()
         else:    
             self.database = database
+        self.encontrados[self.name] = []
+
+        results = self.database.search(['id'],{
+            'spider':self.name,
+        })        
+        for h in [str(row[0]).strip() for row in results]:
+            self.add_name(self.name, str(h)) 
 
 
     def start_requests(self):       
@@ -44,27 +51,17 @@ class NikeRestockSpider(scrapy.Spider):
                 record['id']=row                     
                 yield record 
 
-    
-        
-
-    def parse(self, response):       
+    def parse(self, response):     
         finish  = True
         tab = response.url.replace('?','/').split('/')[4]  
         categoria = 'nike_restock' if tab == 'Estoque' else 'nov-calcados'
         #pega todos os ites da pagina, apenas os nomes dos tenis
         items = [ name for name in response.xpath('//div[contains(@class,"produto produto--")]') ]
         if(len(items) > 0 ):
-            finish = True
-
-        #pega todos os nomes da tabela, apenas os nomes    
-        results = self.database.search(['id'],{
-            'spider':self.name,
-            'categoria':categoria            
-        })        
-        rows = [str(row[0]).strip() for row in results]
+            finish = True       
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
-        for item in items[0:5]: 
+        for item in items: 
             name = item.xpath('.//h2//span/text()').get()           
             prod_url = item.xpath('.//a/@href').get()
             id = 'ID{}-{}-{}$'.format(item.xpath('.//a/img/@alt').get().split(".")[-1].strip(), categoria, tab)
@@ -82,10 +79,9 @@ class NikeRestockSpider(scrapy.Spider):
             record['tamanhos']=''    
             record['outros']=''
             record['price']=''             
-            self.add_name(self.name, str(id))
-            if len( [id_db for id_db in rows if str(id_db) == str(id)]) == 0:     
+            if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     
+                self.add_name(self.name, str(id))  
                 yield scrapy.Request(url=prod_url, callback=self.details, meta=dict(record=record))
-
         
         if(finish == False):
             uri = response.url.split('&p=')
@@ -93,8 +89,6 @@ class NikeRestockSpider(scrapy.Spider):
             page = int(uri[1]) + 1
             url = '{}&p={}'.format(part, str(page))
             yield scrapy.Request(url=url, callback=self.parse)
-                
-          
             
     def details(self, response):
         record = Inserter()
@@ -102,8 +96,6 @@ class NikeRestockSpider(scrapy.Spider):
         opcoes_list = []
         images_list = []
         images = response.xpath('//ul[@class="js-thumb-list"]//img/@src').getall()
-       
-       
 
         for imagem in images:
             images_list.append(imagem)        
@@ -115,7 +107,6 @@ class NikeRestockSpider(scrapy.Spider):
                 for k in data.keys():
                     url = '{}-{}'.format('-'.join(response.url.split('-')[0:-1]), data[k]['ProdutoId'])
                     opcoes_list.append({'tamanho': k, 'url': {'label': data[k]['ProdutoId'], 'href' : url }})
-
         
         record['codigo'] ='-'.join(images_list[0].split('-')[-4:-2])
         record['prod_url']=response.url 

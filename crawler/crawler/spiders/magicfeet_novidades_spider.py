@@ -16,8 +16,15 @@ class MagicfeetNovidadesSpider(scrapy.Spider):
             self.database = Database()
         else:    
             self.database = database
+        self.encontrados[self.name] = []
 
-    def start_requests(self):       
+        results = self.database.search(['id'],{
+            'spider':self.name,
+        })        
+        for h in [str(row[0]).strip() for row in results]:
+            self.add_name(self.name, str(h))    
+
+    def start_requests(self):
         urls = [
             'https://www.magicfeet.com.br/lancamentos',              
         ]
@@ -43,8 +50,6 @@ class MagicfeetNovidadesSpider(scrapy.Spider):
                 record['id']=row                     
                 yield record  
 
-  
-
     def extract_sl(self, response):
         scripts = response.xpath('//script/text()').getall()
         for script in scripts:
@@ -53,9 +58,7 @@ class MagicfeetNovidadesSpider(scrapy.Spider):
                 url='https://www.magicfeet.com.br{}1'.format(sl) 
                 yield scrapy.Request(url=url, callback=self.parse, meta=dict(sl=sl))  
 
-    
-
-    def parse(self, response):       
+    def parse(self, response): 
         finish  = True   
         tab="magicfeet_lancamentos"           
         categoria = 'magicfeet_lancamentos'
@@ -66,16 +69,9 @@ class MagicfeetNovidadesSpider(scrapy.Spider):
 
         if(len(items) > 0 ):
             finish = True
-
-        #pega todos os nomes da tabela, apenas os nomes    
-        results = self.database.search(['id'],{
-            'spider':self.name,
-            'categoria':categoria,           
-        })        
-        rows = [str(row[0]).strip() for row in results]
-
+     
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
-        for item in items[0:5]:
+        for item in items:
             name = item.xpath('.//h3//a/@title').get()
             prod_url = item.xpath('.//a/@href').get()            
             id = 'ID{}$'.format(item.xpath('./@data-product-id').get())
@@ -94,8 +90,8 @@ class MagicfeetNovidadesSpider(scrapy.Spider):
             record['tamanhos']=''    
             record['outros']=''
             record['price']='R$ {}'.format(price)            
-            self.add_name(self.name, str(id))
-            if len( [id_db for id_db in rows if str(id_db) == str(id)]) == 0:  
+            if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     
+                self.add_name(self.name, str(id))  
                 yield scrapy.Request(url=prod_url, callback=self.details, meta=dict(record=record, sl=sl))
         
         if(finish == False):
@@ -104,7 +100,6 @@ class MagicfeetNovidadesSpider(scrapy.Spider):
             page = int(uri[1]) + 1
             url = '{}&PageNumber={}'.format(part, str(page))
             yield scrapy.Request(url=url, callback=self.parse, meta=dict(sl=response.meta['sl']))
-          
 
     def details(self, response):
         record = Inserter()
@@ -134,7 +129,6 @@ class MagicfeetNovidadesSpider(scrapy.Spider):
         
         url = 'https://www.magicfeet.com.br/buscapagina?PS=999&sl={}&cc=999&sm=0&fq=spec_fct_15:{}'.format(sl,productReference)
         yield scrapy.Request(url=url, callback=self.other_links, meta=dict(record=record))
-
 
     def other_links(self, response):
         others = set()

@@ -15,6 +15,13 @@ class MazeSnkrsSpider(scrapy.Spider):
             self.database = Database()
         else:    
             self.database = database
+        self.encontrados[self.name] = []
+
+        results = self.database.search(['id'],{
+            'spider':self.name,
+        })        
+        for h in [str(row[0]).strip() for row in results]:
+            self.add_name(self.name, str(h)) 
 
     def start_requests(self):       
         urls = [            
@@ -48,28 +55,18 @@ class MazeSnkrsSpider(scrapy.Spider):
         filter = response.xpath('//input[@id="GenericPageFilter"]/@value').get()        
         url='https://www.maze.com.br/product/getproductscategory/?path={}&viewList=g&pageSize=12&order=&brand=&category={}&group=&keyWord=&initialPrice=&finalPrice=&variations=&idAttribute=&idEventList=&idCategories=&idGroupingType=&pageNumber=1'.format(path,filter)        
         yield scrapy.Request(url=url, callback=self.parse)
-        
 
-    def parse(self, response):       
+    def parse(self, response):     
         finish  = True                
         tab = response.url.split('=')[1].split('&')[0]        
-        categoria = 'maze_snkrs'
-              
+        categoria = 'maze_snkrs'              
         #pega todos os ites da pagina, apenas os nomes dos tenis
         items = [ name for name in response.xpath('//div[@class="ui card produto product-in-card"]') ]
-
         if(len(items) > 0 ):
             finish = True
 
-        #pega todos os nomes da tabela, apenas os nomes    
-        results = self.database.search(['id'],{
-            'spider':self.name,
-            'categoria':categoria,            
-        })        
-        rows = [str(row[0]).strip() for row in results]
-
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
-        for item in items[0:5]:         
+        for item in items:         
             name = item.xpath('.//a/@title').get()
             prod_url = 'https://www.maze.com.br{}'.format(item.xpath('.//a/@href').get())
             id = 'ID{}-{}$'.format(item.xpath('.//meta[@itemprop="productID"]/@content').get(), tab)   
@@ -88,8 +85,8 @@ class MazeSnkrsSpider(scrapy.Spider):
             record['tamanhos']=''    
             record['outros']=''
             record['price']='R$ {}'.format(price)
-            self.add_name(self.name, str(id))
-            if len( [id_db for id_db in rows if str(id_db) == str(id)]) == 0:  
+            if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     
+                self.add_name(self.name, str(id))  
                 yield scrapy.Request(url=prod_url, callback=self.details, meta=(dict(record=record)))
 
         if(finish == False):
@@ -98,8 +95,6 @@ class MazeSnkrsSpider(scrapy.Spider):
             page = int(uri[1]) + 1
             url = '{}&pageNumber={}'.format(part, str(page))
             yield scrapy.Request(url=url, callback=self.parse)
-              
-            
 
     def details(self, response):  
         record = Inserter()
@@ -115,7 +110,6 @@ class MazeSnkrsSpider(scrapy.Spider):
             for variation in item['Variations']:  
                 opcoes_list.append({'tamanho': variation['Name'] })                              
         record['codigo']=response.xpath('//h6[@class="codProduto"]/text()').get()
-      
         record['prod_url']=response.url 
         record['imagens']="|".join(images_list) 
         record['tamanhos']=json.dumps(opcoes_list)

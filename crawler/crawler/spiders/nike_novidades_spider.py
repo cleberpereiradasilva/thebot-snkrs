@@ -7,8 +7,6 @@ try:
 except:
     from crawler.items import Inserter, Updater, Deleter
     from data.database import Database
-
-
 class NikeNovidadesSpider(scrapy.Spider):
     name = "nike_lancamentos"    
     encontrados = {}
@@ -17,7 +15,13 @@ class NikeNovidadesSpider(scrapy.Spider):
             self.database = Database()
         else:    
             self.database = database
+        self.encontrados[self.name] = []
 
+        results = self.database.search(['id'],{
+            'spider':self.name,
+        })        
+        for h in [str(row[0]).strip() for row in results]:
+            self.add_name(self.name, str(h)) 
 
     def start_requests(self):
         urls = [
@@ -52,7 +56,6 @@ class NikeNovidadesSpider(scrapy.Spider):
                 record = Deleter()
                 record['id']=row                     
                 yield record  
-    
 
     def parse(self, response):
         items = response.xpath('//div[@data-codigo]')  
@@ -62,14 +65,7 @@ class NikeNovidadesSpider(scrapy.Spider):
         if(len(items) > 0 ):
             finish = True   
 
-        #pega todos os nomes da tabela, apenas os nomes
-        results = self.database.search(['id'],{
-            'spider':self.name,
-            'categoria':categoria            
-        })        
-        rows = [str(row[0]).strip() for row in results]        
-
-        for item in items[0:5]:
+        for item in items:
             id = 'ID{}-{}-{}$'.format(item.xpath('./@data-codigo').get().strip(), categoria,tab)            
             name = item.xpath('.//a[@class="produto__nome"]/text()').get()
             prod_url = item.xpath('.//a/@href').get()           
@@ -92,8 +88,8 @@ class NikeNovidadesSpider(scrapy.Spider):
                 record['tamanhos']=''    
                 record['outros']=''
                 record['price']=item.xpath('.//span[contains(@class,"produto__preco_por")]/text()').get()   
-                self.add_name(self.name , str(id))
-                if len( [id_db for id_db in rows if str(id_db) == str(id)]) == 0:     
+                if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     
+                    self.add_name(self.name, str(id))     
                     yield scrapy.Request(url=prod_url, callback=self.details, meta=dict(record=record))
 
         if(finish == False):
@@ -102,6 +98,7 @@ class NikeNovidadesSpider(scrapy.Spider):
             page = int(uri[1]) + 1
             url = '{}&p={}'.format(part, str(page))
             yield scrapy.Request(url=url, callback=self.parse)
+
     def details(self, response):  
         record = Inserter()
         record = response.meta['record']             

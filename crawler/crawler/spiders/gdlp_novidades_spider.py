@@ -16,8 +16,15 @@ class GdlpNovidadesSpider(scrapy.Spider):
             self.database = Database()
         else:    
             self.database = database
+        self.encontrados[self.name] = []
 
-    def start_requests(self):       
+        results = self.database.search(['id'],{
+            'spider':self.name,
+        })        
+        for h in [str(row[0]).strip() for row in results]:
+            self.add_name(self.name, str(h))      
+
+    def start_requests(self): 
         urls = [            
             'https://gdlp.com.br/lancamentos',            
         ]
@@ -47,7 +54,7 @@ class GdlpNovidadesSpider(scrapy.Spider):
     
 
 
-    def parse(self, response):       
+    def parse(self, response):      
         finish  = True
         tab = 'gdlp_lancamentos'       
         categoria = 'gdlp_lancamentos' 
@@ -56,15 +63,8 @@ class GdlpNovidadesSpider(scrapy.Spider):
         if(len(items) > 0 ):
             finish = True
         
-        #pega todos os nomes da tabela, apenas os nomes    
-        results = self.database.search(['id'],{
-            'spider':self.name,
-            'categoria':categoria,            
-        })        
-        rows = [str(row[0]).strip() for row in results]
-
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
-        for item in items[0:5]:
+        for item in items:
             name = item.xpath('.//h2//a/text()').get()
             prod_url = item.xpath('.//a/@href').get()
             id_price = item.xpath('.//span[@class="regular-price"]/@id').get()           
@@ -84,10 +84,9 @@ class GdlpNovidadesSpider(scrapy.Spider):
             record['tamanhos']=''    
             record['price']=price          
             record['outros']=''      
-            self.add_name(self.name, str(id))
-            if len( [id_db for id_db in rows if str(id_db) == str(id)]) == 0:  
+            if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     
+                self.add_name(self.name, str(id))
                 yield scrapy.Request(url=prod_url, callback=self.details, meta=(dict(record=record)))
-
         
         if(finish == False):
             paginacao = response.xpath('//div[@class="pages"]//li')

@@ -17,9 +17,15 @@ class GdlpRestockSpider(scrapy.Spider):
             self.database = Database()
         else:    
             self.database = database
+        self.encontrados[self.name] = []
 
+        results = self.database.search(['id'],{
+            'spider':self.name,
+        })        
+        for h in [str(row[0]).strip() for row in results]:
+            self.add_name(self.name, str(h))    
 
-    def start_requests(self):       
+    def start_requests(self): 
         urls = [            
             'https://gdlp.com.br/calcados/adidas',
             'https://gdlp.com.br/calcados/nike',
@@ -48,9 +54,7 @@ class GdlpRestockSpider(scrapy.Spider):
                 record['id']=row                     
                 yield record  
 
-    
-
-    def parse(self, response):       
+    def parse(self, response):     
         finish  = True
         tab = response.url.replace('?','/').split('/')[4]  
         categoria = 'gdlp_restock' 
@@ -58,16 +62,9 @@ class GdlpRestockSpider(scrapy.Spider):
         items = [ name for name in response.xpath('//li[@class="item last"]') ]
         if(len(items) > 0 ):
             finish = True
-        
-        #pega todos os nomes da tabela, apenas os nomes    
-        results = self.database.search(['id'],{
-            'spider':self.name,
-            'categoria':categoria,            
-        })        
-        rows = [str(row[0]).strip() for row in results]
-
+      
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
-        for item in items[0:5]: 
+        for item in items: 
             name = item.xpath('.//h2//a/text()').get()
             prod_url = item.xpath('.//a/@href').get()
             id_price = item.xpath('.//span[@class="regular-price"]/@id').get()           
@@ -87,8 +84,8 @@ class GdlpRestockSpider(scrapy.Spider):
             record['tamanhos']=''    
             record['price']=price          
             record['outros']=''      
-            self.add_name(self.name, str(id))
-            if len( [id_db for id_db in rows if str(id_db) == str(id)]) == 0:  
+            if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     
+                self.add_name(self.name, str(id))
                 yield scrapy.Request(url=prod_url, callback=self.details, meta=(dict(record=record)))
         
         if(finish == False):
@@ -97,8 +94,6 @@ class GdlpRestockSpider(scrapy.Spider):
                 url = response.xpath('//div[@class="pages"]//a[@class="next i-next"]/@href').get()
                 if url:                
                     yield scrapy.Request(url=url, callback=self.parse)
-             
-           
 
     def details(self, response):   
         record = Inserter()
