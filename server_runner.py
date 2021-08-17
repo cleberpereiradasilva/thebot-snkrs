@@ -7,10 +7,6 @@ from datetime import datetime
 inicio = datetime.now().strftime('%Y-%m-%d %H:%M') 
 
 
-
-
-
-
 if __name__ == '__main__':
     database = Database()   
     first_time = database.isEmpty()   
