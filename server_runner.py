@@ -19,7 +19,8 @@ if __name__ == '__main__':
         if first_time:            
             for i in range(1,10):
                 os.system("python server_spiders.py")
-                os.system("python server_spiders_nike.py")                
+                os.system("python server_spiders_nike.py") 
+                print('Finalizado rodada {}'.format(i))
                 time.sleep(15)
             first_time = False
         if first_time == False and discord_on == False:            
