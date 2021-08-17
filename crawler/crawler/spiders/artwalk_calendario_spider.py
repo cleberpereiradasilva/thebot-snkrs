@@ -56,10 +56,10 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
         categoria = 'artwalk_snkrs' 
         
         #pega todos os ites da pagina, apenas os nomes dos tenis
-        items = [ name for name in response.xpath('//div[@class="box-banner"]') ]      
+        nodes = [ name for name in response.xpath('//div[@class="box-banner"]') ]      
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
-        for item in items:  
+        for item in nodes[0:10]:  
             prod_url = 'https://www.artwalk.com.br{}'.format(item.xpath('.//a/@href').get())            
             id = 'ID{}$'.format(prod_url)                        
             record = Inserter()

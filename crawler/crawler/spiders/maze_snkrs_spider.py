@@ -61,12 +61,12 @@ class MazeSnkrsSpider(scrapy.Spider):
         tab = response.url.split('=')[1].split('&')[0]        
         categoria = 'maze_snkrs'              
         #pega todos os ites da pagina, apenas os nomes dos tenis
-        items = [ name for name in response.xpath('//div[@class="ui card produto product-in-card"]') ]
-        if(len(items) > 0 ):
-            finish = False
+        nodes = [ name for name in response.xpath('//div[@class="ui card produto product-in-card"]') ]
+        if(len(nodes) > 0 ):
+            finish=True
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
-        for item in items:         
+        for item in nodes[0:10]:         
             name = item.xpath('.//a/@title').get()
             prod_url = 'https://www.maze.com.br{}'.format(item.xpath('.//a/@href').get())
             id = 'ID{}-{}$'.format(item.xpath('.//meta[@itemprop="productID"]/@content').get(), tab)   

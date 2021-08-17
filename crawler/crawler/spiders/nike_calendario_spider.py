@@ -54,12 +54,12 @@ class NikeCalendarioSpider(scrapy.Spider):
         tab = response.url.replace('?','/').split('/')[4]  
         categoria = 'nike_calendario_snkrs'
         #pega todos os ites da pagina, apenas os nomes dos tenis
-        items = [ name for name in response.xpath('//div[contains(@class,"produto produto--")]') ]
-        if(len(items) > 0 ):
-            finish = False
+        nodes = [ name for name in response.xpath('//div[contains(@class,"produto produto--")]') ]
+        if(len(nodes) > 0 ):
+            finish=True
        
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
-        for item in items:
+        for item in nodes[0:10]:
             name = item.xpath('.//h2/text()').get()            
             prod_url = item.xpath('.//a/@href').get()
             id = 'ID{}-{}$'.format(item.xpath('.//a/img/@alt').get().split(".")[-1].strip(), tab)            

@@ -69,13 +69,13 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
         categoria = 'magicfeet_snkrs'       
         
         #pega todos os ites da pagina, apenas os nomes dos tenis
-        items = [ name for name in response.xpath('//div[@class="shelf-item"]') ]
+        nodes = [ name for name in response.xpath('//div[@class="shelf-item"]') ]
 
-        if(len(items) > 0 ):
-            finish = False
+        if(len(nodes) > 0 ):
+            finish=True
             
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
-        for item in items:
+        for item in nodes[0:10]:
             name = item.xpath('.//h3//a/@title').get()
             prod_url = item.xpath('.//a/@href').get()            
             codigo = 'ID{}-{}$'.format(item.xpath('./@data-product-id').get(), tab)

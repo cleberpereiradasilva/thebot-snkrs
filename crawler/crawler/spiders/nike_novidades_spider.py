@@ -58,14 +58,14 @@ class NikeNovidadesSpider(scrapy.Spider):
                 yield record  
 
     def parse(self, response):
-        items = response.xpath('//div[@data-codigo]')  
+        nodes = response.xpath('//div[@data-codigo]')  
         finish  = True
         tab = 'Feminino' if 'fem' in response.url else 'Masculino'
         categoria = 'nike_lancamentos_snkrs' if 'Calcados' in response.url else 'nike_lancamentos'
-        if(len(items) > 0 ):
-            finish = False   
+        if(len(nodes) > 0 ):
+            finish=True   
 
-        for item in items:
+        for item in nodes[0:10]:
             id = 'ID{}-{}-{}$'.format(item.xpath('./@data-codigo').get().strip(), categoria,tab)            
             name = item.xpath('.//a[@class="produto__nome"]/text()').get()
             prod_url = item.xpath('.//a/@href').get()           
