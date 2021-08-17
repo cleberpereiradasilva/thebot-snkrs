@@ -61,7 +61,7 @@ class GdlpNovidadesSpider(scrapy.Spider):
         #pega todos os ites da pagina, apenas os nomes dos tenis
         items = [ name for name in response.xpath('//li[@class="item last"]') ]
         if(len(items) > 0 ):
-            finish = True
+            finish = False
         
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
         for item in items:

@@ -19,10 +19,10 @@ if __name__ == '__main__':
         if first_time:            
             for i in range(1,10):
                 os.system("python server_spiders.py")
-                os.system("python server_spiders_nike.py")
+                os.system("python server_spiders_nike.py")                
+                time.sleep(15)
             first_time = False
-        if first_time == False and discord_on == False:
-            print(['python','server_discord.py', '', inicio])
+        if first_time == False and discord_on == False:            
             subprocess.Popen(['python','server_discord.py', '', inicio])
             discord_on = True
             time.sleep(20)

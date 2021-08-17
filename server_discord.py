@@ -11,6 +11,7 @@ class MyClient(discord.Client):
         # start the task to run in the background  
         self.inicio = inicio      
         self.database = Database()
+        self.database.avisar_todos()
         self.first_time = self.database.isEmpty()
         try:
             self.channels = channels if channels != None else json.loads(self.database.get_config().replace("'",'"'))
@@ -100,8 +101,7 @@ class MyClient(discord.Client):
 
         
     async def on_ready(self):
-        print('Logado...')
-        print(self.inicio)
+        print('Logado...')        
         if self.inicio:
             adm_channel = os.environ.get('ADMIN_CHANNEL')
             if adm_channel == None:                

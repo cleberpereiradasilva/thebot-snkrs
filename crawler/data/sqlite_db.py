@@ -87,7 +87,8 @@ class Sqlite():
             (                
                 item['id'], 
             ))
-        self.database.commit()
+        self.database.commit()       
+        logging.log(logging.INFO, "Removendo...!")
 
     def delete_by_url(self, url):        
         self.cursor.execute("delete from products where url = '{}' ".format(url))

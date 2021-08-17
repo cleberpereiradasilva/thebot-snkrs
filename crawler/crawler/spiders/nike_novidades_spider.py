@@ -63,7 +63,7 @@ class NikeNovidadesSpider(scrapy.Spider):
         tab = 'Feminino' if 'fem' in response.url else 'Masculino'
         categoria = 'nike_lancamentos_snkrs' if 'Calcados' in response.url else 'nike_lancamentos'
         if(len(items) > 0 ):
-            finish = True   
+            finish = False   
 
         for item in items:
             id = 'ID{}-{}-{}$'.format(item.xpath('./@data-codigo').get().strip(), categoria,tab)            

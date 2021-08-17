@@ -1,6 +1,7 @@
 import scrapy
 import json, time
 from datetime import datetime
+import logging
 try:
     from crawler.crawler.items import Inserter, Updater, Deleter
     from crawler.data.database import Database
@@ -31,9 +32,10 @@ class ArtwalkNovidadesSpider(scrapy.Spider):
             'https://www.artwalk.com.br/novidades?PS=24&O=OrderByReleaseDateDESC',            
         ]
         for url in urls:
-            yield scrapy.Request(url=url, callback=self.extract_sl)  
-        self.remove()
-       
+            yield scrapy.Request(url=url, callback=self.extract_sl)
+            
+        self.remove()  
+                
     def add_name(self, key, id):
         if key in  self.encontrados:
             self.encontrados[key].append(id)
@@ -41,6 +43,8 @@ class ArtwalkNovidadesSpider(scrapy.Spider):
             self.encontrados[key] = [id]
 
     def remove(self):
+        print("Removendo.....")
+        
         #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
         results = self.database.search(['id'],{
             'spider':self.name                        
@@ -51,6 +55,7 @@ class ArtwalkNovidadesSpider(scrapy.Spider):
                 record = Deleter()
                 record['id']=row                     
                 yield record  
+        print(len(self.encontrados))
 
     def extract_sl(self, response):
         scripts = response.xpath('//script/text()').getall()
@@ -70,7 +75,7 @@ class ArtwalkNovidadesSpider(scrapy.Spider):
         items = [ name for name in response.xpath('//div[@class="product-item-container"]') ]
 
         if(len(items) > 0 ):
-            finish = True
+            finish = False
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
         for item in items:  
@@ -100,14 +105,13 @@ class ArtwalkNovidadesSpider(scrapy.Spider):
                         self.add_name(self.name, str(id))
                         yield scrapy.Request(url=prod_url, callback=self.details, meta=dict(record=record, sl=sl))
                 
-        
+       
         if(finish == False):
             uri = response.url.split('&PageNumber=')
             part = uri[0]
             page = int(uri[1]) + 1
             url = '{}&PageNumber={}'.format(part, str(page))
-            yield scrapy.Request(url=url, callback=self.parse, meta=dict(sl=response.meta['sl']))
-                     
+            yield scrapy.Request(url=url, callback=self.parse, meta=dict(sl=response.meta['sl']))       
 
     def details(self, response):
         record = Inserter()
