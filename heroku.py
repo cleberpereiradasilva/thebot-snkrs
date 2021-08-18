@@ -259,6 +259,7 @@ def r_discord():
 
 if __name__ == '__main__':
     database = Database()   
+    database.delete_all()
     first_time = database.isEmpty()    
     if first_time:
         for i in range(0,2):
@@ -268,9 +269,7 @@ if __name__ == '__main__':
 
     p2 = multiprocessing.Process(name='p2', target=r_discord)
     p2.start()
-
-    time.sleep(15)
-
+    time.sleep(5)
     p1 = multiprocessing.Process(name='p1', target=r_forever)    
     p1.start()
 

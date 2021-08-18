@@ -102,8 +102,7 @@ class Sqlite():
         self.database.commit()
 
     def search(self, fields, item):
-        query = 'SELECT {} FROM products where {}'.format(','.join(fields), ' and '.join(['lower({})="{}"'.format(k, str(item[k]).lower()) for k in item.keys()]) )
-        print(row for row in self.cursor.execute(query))
+        query = 'SELECT {} FROM products where {}'.format(','.join(fields), ' and '.join(['lower({})="{}"'.format(k, str(item[k]).lower()) for k in item.keys()]) )        
         return [row for row in self.cursor.execute(query)]
     
     def search_name(self, word):
