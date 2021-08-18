@@ -1,1 +1,1 @@
-worker: python server_runner.py
+worker: python heroku.py

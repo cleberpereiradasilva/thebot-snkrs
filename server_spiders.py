@@ -32,14 +32,14 @@ def crawl():
     spiders = [
         ArtwalkCalendarioSpider,        
         ArtwalkNovidadesSpider,
-        ArtwalkRestockSpider,            
-        GdlpNovidadesSpider,
-        GdlpRestockSpider,            
-        MazeSnkrsSpider,
-        MazeNovidadesSpider,
-        MazeRestockSpider,
-        MagicfeetNovidadesSpider,
-        MagicfeetSnkrsSpider,        
+        # ArtwalkRestockSpider,            
+        # GdlpNovidadesSpider,
+        # GdlpRestockSpider,            
+        # MazeSnkrsSpider,
+        # MazeNovidadesSpider,
+        # MazeRestockSpider,
+        # MagicfeetNovidadesSpider,
+        # MagicfeetSnkrsSpider,        
     ]
 
     for spider in spiders:          
