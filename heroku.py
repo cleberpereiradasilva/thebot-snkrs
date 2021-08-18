@@ -22,11 +22,11 @@ from crawler.crawler.spiders.magicfeet_snkrs_spider import MagicfeetSnkrsSpider
 from crawler.crawler.spiders.maze_novidades_spider import MazeNovidadesSpider
 from crawler.crawler.spiders.maze_restock_spider import MazeRestockSpider
 from crawler.crawler.spiders.maze_snkrs_spider import MazeSnkrsSpider
-
-
-
-
-from crawler.crawler import normal_settings as my_settings 
+from crawler.crawler.spiders.nike_calendario_spider import NikeCalendarioSpider
+from crawler.crawler.spiders.nike_novidades_spider import NikeNovidadesSpider
+from crawler.crawler.spiders.nike_restock_spider import NikeRestockSpider
+from crawler.crawler import normal_settings as normal_settings 
+from crawler.crawler import nike_settings as nike_settings 
 from discord.ext import tasks
 from scrapy.settings import Settings
 
@@ -34,6 +34,7 @@ from scrapy.settings import Settings
 def run_spider(spider, database):
     def f(q):
         try:
+            my_settings = nike_settings if 'nike' in str(spider) else normal_settings
             crawler_settings = Settings()
             configure_logging()
             crawler_settings.setmodule(my_settings)                       
@@ -67,7 +68,10 @@ def r_spiders():
             MazeNovidadesSpider,
             MazeRestockSpider,
             MagicfeetNovidadesSpider,
-            MagicfeetSnkrsSpider 
+            MagicfeetSnkrsSpider,
+            NikeRestockSpider,         
+            NikeNovidadesSpider,                
+            NikeCalendarioSpider
     ]
 
     for spider in spiders:  
@@ -261,7 +265,7 @@ if __name__ == '__main__':
     database.delete_all()
     first_time = database.isEmpty()    
     if first_time:
-        for i in range(0,2):
+        for i in range(0,10):
             r_spiders()
             time.sleep(1)
         database.avisar_todos()
