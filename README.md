@@ -105,43 +105,43 @@
 
 {  
   "artwalk_restock": {
-    "canal": 0000000000000,    
+    "canal": 0000000000000    
   },
   "artwalk_snkrs": {
-    "canal": 0000000000000,    
+    "canal": 0000000000000    
   },
   "artwalk_lancamentos": {
-    "canal": 0000000000000,    
+    "canal": 0000000000000    
   },    
   "guadalupe_lancamentos": {
-    "canal": 0000000000000,    
+    "canal": 0000000000000    
   },
   "guadalupe_restock": {
-    "canal": 0000000000000,    
+    "canal": 0000000000000    
   },
   "guadalupe_snkrs": {
-    "canal": 0000000000000,    
+    "canal": 0000000000000    
   },
   "magicfeet_lancamentos": {
-    "canal": 0000000000000,    
+    "canal": 0000000000000    
   },
   "maze_lancamentos": {
-    "canal": 0000000000000,    
+    "canal": 0000000000000    
   },
   "maze_restock": {
-    "canal": 0000000000000,    
+    "canal": 0000000000000    
   },
   "maze_snkrs": {
-    "canal": 0000000000000,    
+    "canal": 0000000000000    
   },
   "nike_lancamentos": {
-    "canal": 0000000000000,    
+    "canal": 0000000000000    
   },
   "nike_restock": {
-    "canal": 0000000000000,    
+    "canal": 0000000000000    
   },
   "nike_snkrs": {
-    "canal": 0000000000000,    
+    "canal": 0000000000000    
   }
 }
 ```
