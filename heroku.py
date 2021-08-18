@@ -59,15 +59,15 @@ def r_spiders():
     database = Database()
     spiders = [
             ArtwalkCalendarioSpider,
-            ArtwalkNovidadesSpider,
-            ArtwalkRestockSpider,            
-            GdlpNovidadesSpider,
-            GdlpRestockSpider,            
-            MazeSnkrsSpider,
-            MazeNovidadesSpider,
-            MazeRestockSpider,
-            MagicfeetNovidadesSpider,
-            MagicfeetSnkrsSpider 
+            # ArtwalkNovidadesSpider,
+            # ArtwalkRestockSpider,            
+            # GdlpNovidadesSpider,
+            # GdlpRestockSpider,            
+            # MazeSnkrsSpider,
+            # MazeNovidadesSpider,
+            # MazeRestockSpider,
+            # MagicfeetNovidadesSpider,
+            # MagicfeetSnkrsSpider 
     ]
 
     for spider in spiders:  
@@ -76,7 +76,10 @@ def r_spiders():
 def r_forever():
     n = 30
     while True:
-        r_spiders()
+        try:
+            r_spiders()
+        except:
+            pass
         print('Aguardando {}s'.format(n))
         time.sleep(n)
 
@@ -193,6 +196,20 @@ class MyClient(discord.Client):
     
     @tasks.loop(seconds=15) # task runs every 15 seconds
     async def my_background_task(self): 
+        print(' ============ DISCORD ===============')
+        print(' ============ DISCORD ===============')
+        print(' ============ DISCORD ===============')
+        print(' ============ DISCORD ===============')
+        print(' ============ DISCORD ===============')
+        print(' ============ DISCORD ===============')
+        print(' ============ DISCORD ===============')
+        print('')
+        print('')
+        print('')
+        print('')
+        print('')
+        print('')
+        print('')
         for channel in self.channels:                      
             channel_id = int(self.channels[channel]['canal'])            
             send_to = self.get_channel(channel_id)                                       
@@ -228,26 +245,46 @@ class MyClient(discord.Client):
         await self.wait_until_ready() # wait until the bot logs in
 
 def r_discord(inicial):
-   
-    key = os.environ.get('DISCORD_SERVER_KEY')           
-    client = MyClient(inicial)
-    if key:              
-        client.run(key)
-    else:
-        import config_local as config        
-        client.run(config.key)
+    try:
+        key = os.environ.get('DISCORD_SERVER_KEY')           
+        client = MyClient(inicial)
+        if key:              
+            client.run(key)
+        else:
+            import config_local as config        
+            client.run(config.key)
+    except:
+        print(' ')
+        print(' ')
+        print(' ')
+        print(' ********* ERROR NO DISCORD ********** ')
+        print(' ********* ERROR NO DISCORD ********** ')
+        print(' ********* ERROR NO DISCORD ********** ')
+        print(' ********* ERROR NO DISCORD ********** ')
+        print(' ********* ERROR NO DISCORD ********** ')
+        print(' ********* ERROR NO DISCORD ********** ')
+        print(' ********* ERROR NO DISCORD ********** ')
+        print(' ')
+        print(' ')
+        print(' ')
+
+
 
 if __name__ == '__main__':
     database = Database()   
     first_time = database.isEmpty()    
     if first_time:
-        for i in range(0,10):
+        for i in range(0,2):
             r_spiders()
             time.sleep(1)
         database.avisar_todos()
-    
-    p1 = multiprocessing.Process(name='p1', target=r_forever)    
-    p1.start()
 
     p2 = multiprocessing.Process(name='p2', target=r_discord)
     p2.start()
+
+    time.sleep(15)
+
+    p1 = multiprocessing.Process(name='p1', target=r_forever)    
+    p1.start()
+
+    
