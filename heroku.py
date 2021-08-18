@@ -59,15 +59,15 @@ def r_spiders():
     database = Database()
     spiders = [
             ArtwalkCalendarioSpider,
-            #ArtwalkNovidadesSpider,
-            #ArtwalkRestockSpider,            
-            # GdlpNovidadesSpider,
-            # GdlpRestockSpider,            
-            # MazeSnkrsSpider,
-            # MazeNovidadesSpider,
-            # MazeRestockSpider,
-            # MagicfeetNovidadesSpider,
-            # MagicfeetSnkrsSpider          
+            ArtwalkNovidadesSpider,
+            ArtwalkRestockSpider,            
+            GdlpNovidadesSpider,
+            GdlpRestockSpider,            
+            MazeSnkrsSpider,
+            MazeNovidadesSpider,
+            MazeRestockSpider,
+            MagicfeetNovidadesSpider,
+            MagicfeetSnkrsSpider 
     ]
 
     for spider in spiders:  
@@ -83,20 +83,16 @@ def r_forever():
 
 
 class MyClient(discord.Client):
-    def __init__(self, inicio=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)        
-        # start the task to run in the background  
-        print(inicio)
-        print(inicio)
-        print(inicio)
-        self.inicio = inicio      
+        # start the task to run in the background                     
         self.database = Database()
         self.database.avisar_todos()
         self.first_time = self.database.isEmpty()
         try:
             self.channels = json.loads(self.database.get_config().replace("'",'"'))
         except:
-            self.channels = {[]}
+            self.channels = {}
         self.my_background_task.start()
 
     async def show_channels(self, adm_channel):
@@ -182,14 +178,7 @@ class MyClient(discord.Client):
         
     async def on_ready(self):
         print('Logado...')        
-        if self.inicio:
-            adm_channel = os.environ.get('ADMIN_CHANNEL')
-            if adm_channel == None:                
-                return
-            send_to = self.get_channel(int(adm_channel))
-            final = datetime.now().strftime('%Y-%m-%d %H:%M') 
-            await send_to.send("Processo inciado    em: {}".format(self.inicio))
-            await send_to.send("Processo finalizado em: {}".format(final))
+        
 
 
     def create_link(self, data, last):
@@ -250,10 +239,7 @@ def r_discord(inicial):
 
 if __name__ == '__main__':
     database = Database()   
-    first_time = database.isEmpty()
-    inicial = None
-    if len(sys.argv) > 1:
-        inicial = sys.argv[1]    
+    first_time = database.isEmpty()    
     if first_time:
         for i in range(0,10):
             r_spiders()
@@ -263,5 +249,5 @@ if __name__ == '__main__':
     p1 = multiprocessing.Process(name='p1', target=r_forever)    
     p1.start()
 
-    p2 = multiprocessing.Process(name='p2', target=r_discord, args=(inicial,))
+    p2 = multiprocessing.Process(name='p2', target=r_discord)
     p2.start()

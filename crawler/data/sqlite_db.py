@@ -26,7 +26,10 @@ class Sqlite():
 
     def get_config(self):
         query = 'SELECT channels FROM config'
-        return [row[0] for row in self.cursor.execute(query)][0]
+        try:
+            return [row[0] for row in self.cursor.execute(query)][0]
+        except:
+            return []
 
     def set_config(self, config):
         self.cursor.execute('delete from config')        
