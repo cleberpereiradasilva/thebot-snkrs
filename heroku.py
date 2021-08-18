@@ -59,15 +59,15 @@ def r_spiders():
     database = Database()
     spiders = [
             ArtwalkCalendarioSpider,
-            # ArtwalkNovidadesSpider,
-            # ArtwalkRestockSpider,            
-            # GdlpNovidadesSpider,
-            # GdlpRestockSpider,            
-            # MazeSnkrsSpider,
-            # MazeNovidadesSpider,
-            # MazeRestockSpider,
-            # MagicfeetNovidadesSpider,
-            # MagicfeetSnkrsSpider 
+            ArtwalkNovidadesSpider,
+            ArtwalkRestockSpider,            
+            GdlpNovidadesSpider,
+            GdlpRestockSpider,            
+            MazeSnkrsSpider,
+            MazeNovidadesSpider,
+            MazeRestockSpider,
+            MagicfeetNovidadesSpider,
+            MagicfeetSnkrsSpider 
     ]
 
     for spider in spiders:  
@@ -197,19 +197,6 @@ class MyClient(discord.Client):
     @tasks.loop(seconds=15) # task runs every 15 seconds
     async def my_background_task(self): 
         print(' ============ DISCORD ===============')
-        print(' ============ DISCORD ===============')
-        print(' ============ DISCORD ===============')
-        print(' ============ DISCORD ===============')
-        print(' ============ DISCORD ===============')
-        print(' ============ DISCORD ===============')
-        print(' ============ DISCORD ===============')
-        print('')
-        print('')
-        print('')
-        print('')
-        print('')
-        print('')
-        print('')
         for channel in self.channels:                      
             channel_id = int(self.channels[channel]['canal'])            
             send_to = self.get_channel(channel_id)                                       
