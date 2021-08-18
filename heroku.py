@@ -244,10 +244,10 @@ class MyClient(discord.Client):
     async def before_my_task(self):
         await self.wait_until_ready() # wait until the bot logs in
 
-def r_discord(inicial):
+def r_discord():
     try:
         key = os.environ.get('DISCORD_SERVER_KEY')           
-        client = MyClient(inicial)
+        client = MyClient()
         if key:              
             client.run(key)
         else:
