@@ -256,7 +256,6 @@ def r_discord():
         print(' ')
 
 
-
 if __name__ == '__main__':
     database = Database()   
     database.delete_all()
