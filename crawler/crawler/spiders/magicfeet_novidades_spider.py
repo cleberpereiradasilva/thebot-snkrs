@@ -29,7 +29,7 @@ class MagicfeetNovidadesSpider(scrapy.Spider):
             'https://www.magicfeet.com.br/lancamentos',              
         ]
         for url in urls:
-            yield scrapy.Request(url=url, callback=self.extract_sl)  
+            yield scrapy.Request(dont_filter=True, url =url, callback=self.extract_sl)  
         self.remove()
        
     def add_name(self, key, id):
@@ -56,51 +56,53 @@ class MagicfeetNovidadesSpider(scrapy.Spider):
             if '&sl=' in script:
                 sl=script.split('load(\'')[1].split('\'')[0]
                 url='https://www.magicfeet.com.br{}1'.format(sl) 
-                yield scrapy.Request(url=url, callback=self.parse, meta=dict(sl=sl))  
+                yield scrapy.Request(dont_filter=True, url =url, callback=self.parse,  meta=dict(sl=sl))  
 
     def parse(self, response): 
         finish  = True   
         tab="magicfeet_lancamentos"           
         categoria = 'magicfeet_lancamentos'
-        sl = response.meta['sl'].split('sl=')[1].split('&')[0]
-
+        sl = response.meta['sl'].split('sl=')[1].split('&')[0]       
+        
         #pega todos os ites da pagina, apenas os nomes dos tenis
         nodes = [ name for name in response.xpath('//div[@class="shelf-item"]') ]
 
         if(len(nodes) > 0 ):
-            finish=True
-     
+            finish=False
+        
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
-        for item in nodes[0:10]:
+        for item in nodes:
+            in_stock = 'esgotado' not in str(item.xpath('.//div[@class="product-item__no-stock"]//span/text()').get())            
             name = item.xpath('.//h3//a/@title').get()
             prod_url = item.xpath('.//a/@href').get()            
-            id = 'ID{}$'.format(item.xpath('./@data-product-id').get())
-            price = item.xpath('.//span[@itemprop="price"]/text()').get()
-            record = Inserter()
-            record['id']=id 
-            record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
-            record['spider']=self.name 
-            record['codigo']=''
-            record['prod_url']=prod_url 
-            record['name']=name 
-            record['categoria']=categoria 
-            record['tab']=tab 
-            record['send']='avisar'       
-            record['imagens']=''  
-            record['tamanhos']=''    
-            record['outros']=''
-            record['price']='R$ {}'.format(price)            
-            if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     
-                self.add_name(self.name, str(id))  
-                yield scrapy.Request(url=prod_url, callback=self.details, meta=dict(record=record, sl=sl))
+            if in_stock:               
+                id = 'ID{}-{}$'.format(item.xpath('./@data-product-id').get(), tab)
+                price = item.xpath('.//span[@itemprop="price"]/text()').get()
+                record = Inserter()
+                record['id']=id 
+                record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
+                record['spider']=self.name 
+                record['codigo']=''
+                record['prod_url']=prod_url 
+                record['name']=name 
+                record['categoria']=categoria 
+                record['tab']=tab 
+                record['send']='avisar'       
+                record['imagens']=''  
+                record['tamanhos']=''    
+                record['outros']=''
+                record['price']=format(price)
+                if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:                     
+                    self.add_name(self.name, str(id))                
+                    yield scrapy.Request(dont_filter=True, url =prod_url, callback=self.details,  meta=dict(record=record, sl=sl))
         
         if(finish == False):
             uri = response.url.split('&PageNumber=')
             part = uri[0]
             page = int(uri[1]) + 1
             url = '{}&PageNumber={}'.format(part, str(page))
-            yield scrapy.Request(url=url, callback=self.parse, meta=dict(sl=response.meta['sl']))
-
+            yield scrapy.Request(dont_filter=True, url =url, callback=self.parse, meta=dict(sl=response.meta['sl']))
+       
     def details(self, response):
         record = Inserter()
         record = response.meta['record'] 
@@ -113,23 +115,22 @@ class MagicfeetNovidadesSpider(scrapy.Spider):
                 tamanhos = '{' + item.split('= {')[1].split('};')[0].strip() + '}'                   
                 data = json.loads(tamanhos)                 
                 skus = data['skus']                                
-                for sku in skus:                                         
-                    if sku['available']:
+                for sku in skus:                     
+                    if sku['available'] and len(sku['dimensions'].keys())>0:
                         opcoes_list.append({'tamanho':sku['dimensions'][list(sku['dimensions'].keys())[0]]})                            
         images = response.xpath('//div[@class="product-images"]//li//a/@rel').getall()
         for imagem in images:                        
             images_list.append(imagem) 
        
-        record['codigo'] = response.xpath('.//div[contains(@class,"productReference")]/text()').get()
+        record['codigo'] = response.xpath('.//div[contains(@class,"productReference")]/text()').get()        
         productReference = '-'.join(record['codigo'].split('-')[:-1])
             
         record['prod_url']=response.url 
         record['imagens']="|".join(images_list) 
-        record['tamanhos']=json.dumps(opcoes_list)
-        
+        record['tamanhos']=json.dumps(opcoes_list)       
         url = 'https://www.magicfeet.com.br/buscapagina?PS=999&sl={}&cc=999&sm=0&fq=spec_fct_15:{}'.format(sl,productReference)
-        yield scrapy.Request(url=url, callback=self.other_links, meta=dict(record=record))
-
+        yield scrapy.Request(dont_filter=True, url =url, callback=self.other_links,  meta=dict(record=record))
+    
     def other_links(self, response):
         others = set()
         record = Inserter()
@@ -140,8 +141,10 @@ class MagicfeetNovidadesSpider(scrapy.Spider):
         record['outros']='|'.join([o for o in others])
         yield record
 
+
       
         
+
 
 
         

@@ -69,9 +69,9 @@ def r_spiders():
             MazeRestockSpider,
             MagicfeetNovidadesSpider,
             MagicfeetSnkrsSpider,
-            NikeRestockSpider,         
-            NikeNovidadesSpider,                
-            NikeCalendarioSpider
+            # NikeRestockSpider,         
+            # NikeNovidadesSpider,                
+            # NikeCalendarioSpider
     ]
 
     for spider in spiders:  
@@ -317,11 +317,12 @@ def r_discord():
 
 if __name__ == '__main__':
     database = Database()       
-    first_time = database.isEmpty()    
+    first_time = database.isEmpty()  
+
     if first_time:
-        for i in range(0,10):
+        for i in range(0,2):
             r_spiders()
-            time.sleep(5)
+            time.sleep(2)
             print('Rodada {}'.format(i))
         database.avisar_todos()
 

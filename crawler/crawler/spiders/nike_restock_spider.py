@@ -30,7 +30,7 @@ class NikeRestockSpider(scrapy.Spider):
         ]       
 
         for url in urls:
-            yield scrapy.Request(url=url, callback=self.parse)  
+            yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)  
         self.remove()
        
     def add_name(self, key, id):
@@ -81,14 +81,14 @@ class NikeRestockSpider(scrapy.Spider):
             record['price']=''             
             if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     
                 self.add_name(self.name, str(id))  
-                yield scrapy.Request(url=prod_url, callback=self.details, meta=dict(record=record))
+                yield scrapy.Request(dont_filter=True, url =prod_url, callback=self.details,  meta=dict(record=record))
         
         if(finish == False):
             uri = response.url.split('&p=')
             part = uri[0]
             page = int(uri[1]) + 1
             url = '{}&p={}'.format(part, str(page))
-            yield scrapy.Request(url=url, callback=self.parse)
+            yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)
             
     def details(self, response):
         record = Inserter()

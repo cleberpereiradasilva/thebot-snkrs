@@ -33,7 +33,7 @@ class GdlpRestockSpider(scrapy.Spider):
             'https://gdlp.com.br/calcados/new-balance'
         ]
         for url in urls:
-            yield scrapy.Request(url=url, callback=self.parse)  
+            yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)  
         self.remove()
        
     def add_name(self, key, id):
@@ -61,10 +61,10 @@ class GdlpRestockSpider(scrapy.Spider):
         #pega todos os ites da pagina, apenas os nomes dos tenis
         nodes = [ name for name in response.xpath('//li[@class="item last"]') ]
         if(len(nodes) > 0 ):
-            finish=True
+            finish=False
       
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
-        for item in nodes[0:10]: 
+        for item in nodes: 
             name = item.xpath('.//h2//a/text()').get()
             prod_url = item.xpath('.//a/@href').get()
             id_price = item.xpath('.//span[@class="regular-price"]/@id').get()           
@@ -86,14 +86,14 @@ class GdlpRestockSpider(scrapy.Spider):
             record['outros']=''      
             if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     
                 self.add_name(self.name, str(id))
-                yield scrapy.Request(url=prod_url, callback=self.details, meta=(dict(record=record)))
+                yield scrapy.Request(dont_filter=True, url =prod_url, callback=self.details,  meta=(dict(record=record)))
         
         if(finish == False):
             paginacao = response.xpath('//div[@class="pages"]//li')
             if len(paginacao) > 0:
                 url = response.xpath('//div[@class="pages"]//a[@class="next i-next"]/@href').get()
                 if url:                
-                    yield scrapy.Request(url=url, callback=self.parse)
+                    yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)
 
     def details(self, response):   
         record = Inserter()

@@ -29,7 +29,7 @@ class MazeRestockSpider(scrapy.Spider):
             'https://www.maze.com.br/',            
         ]
         for url in urls:
-            yield scrapy.Request(url=url, callback=self.extract_links)  
+            yield scrapy.Request(dont_filter=True, url =url, callback=self.extract_links)  
         self.remove()
        
     def add_name(self, key, id):
@@ -55,13 +55,13 @@ class MazeRestockSpider(scrapy.Spider):
             hrefs = response.xpath('//a[@href="/categoria/{}"]/parent::*//div[contains(@class,"ui list")]//a/@href'.format(categoria)).getall()        
             for href in hrefs:                                 
                 url = 'https://www.maze.com.br{}'.format(href)
-                yield scrapy.Request(url=url, callback=self.extract_filter)
+                yield scrapy.Request(dont_filter=True, url =url,  callback=self.extract_filter)
     
     def extract_filter(self, response):
         path = response.url.replace('https://www.maze.com.br','')
         filter = response.xpath('//input[@id="GenericPageFilter"]/@value').get()        
         url='https://www.maze.com.br/product/getproductscategory/?path={}&viewList=g&pageSize=12&order=&brand=&category={}&group=&keyWord=&initialPrice=&finalPrice=&variations=&idAttribute=&idEventList=&idCategories=&idGroupingType=&pageNumber=1'.format(path,filter)
-        yield scrapy.Request(url=url, callback=self.parse)
+        yield scrapy.Request(dont_filter=True, url =url,  callback=self.parse)
 
     def parse(self, response):   
         finish  = True                
@@ -96,14 +96,14 @@ class MazeRestockSpider(scrapy.Spider):
             record['price']='R$ {}'.format(price)
             if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     
                 self.add_name(self.name, str(id)) 
-                yield scrapy.Request(url=prod_url, callback=self.details, meta=(dict(record=record)))
+                yield scrapy.Request(dont_filter=True, url =prod_url, callback=self.details,  meta=(dict(record=record)))
         
         if(finish == False):
             uri = response.url.split('&pageNumber=')
             part = uri[0]
             page = int(uri[1]) + 1
             url = '{}&pageNumber={}'.format(part, str(page))
-            yield scrapy.Request(url=url, callback=self.parse)       
+            yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)       
 
     def details(self, response):  
         record = Inserter()

@@ -37,7 +37,7 @@ class Sqlite():
         self.database.commit()
         return self.get_config()
 
-    def insert(self, item):  
+    def insert(self, item):          
         try:      
             self.cursor.execute("insert into products(created_at ,spider ,id ,codigo, url ,name ,categoria ,tab ,send, imagens, tamanhos, price, outros ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
                 (

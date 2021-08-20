@@ -33,7 +33,7 @@ class ArtwalkRestockSpider(scrapy.Spider):
             'https://www.artwalk.com.br/T%C3%AAnis/Jordan?O=OrderByReleaseDateDESC&&PS=24&map=specificationFilter_16,specificationFilter_15',
         ]
         for url in urls:
-            yield scrapy.Request(url=url, callback=self.extract_sl)  
+            yield scrapy.Request(dont_filter=True, url =url, callback=self.extract_sl)  
         
         self.remove()
        
@@ -61,7 +61,7 @@ class ArtwalkRestockSpider(scrapy.Spider):
             if '&sl=' in script:
                 sl=script.split('load(\'')[1].split('\'')[0]               
                 url='https://www.artwalk.com.br{}1'.format(script.split('load(\'')[1].split('\'')[0])               
-                yield scrapy.Request(url=url, callback=self.parse, meta=dict(sl=sl))    
+                yield scrapy.Request(dont_filter=True, url =url, callback=self.parse, meta=dict(sl=sl))    
 
     def parse(self, response):    
         finish  = True                        
@@ -83,7 +83,7 @@ class ArtwalkRestockSpider(scrapy.Spider):
             finish=True
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
-        for item in nodes[0:10]:
+        for item in nodes:
             name = item.xpath('.//h3//text()').get()
             prod_url = item.xpath('.//a/@href').get()
             price = item.xpath('.//span[@class="product-item__price"]/text()').get()    
@@ -108,14 +108,14 @@ class ArtwalkRestockSpider(scrapy.Spider):
                     record['outros']=''
                     if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     
                         self.add_name(self.name, str(id))     
-                        yield scrapy.Request(url=prod_url, callback=self.details, meta=dict(record=record, sl=sl))
+                        yield scrapy.Request(dont_filter=True, url =prod_url, callback=self.details,  meta=dict(record=record, sl=sl))
         
         if(finish == False):
             uri = response.url.split('&PageNumber=')
             part = uri[0]
             page = int(uri[1]) + 1
             url = '{}&PageNumber={}'.format(part, str(page))
-            yield scrapy.Request(url=url, callback=self.parse, meta=dict(sl=response.meta['sl']))             
+            yield scrapy.Request(dont_filter=True, url =url, callback=self.parse, meta=dict(sl=response.meta['sl']))             
       
     def details(self, response):
         record = Inserter()
@@ -145,7 +145,7 @@ class ArtwalkRestockSpider(scrapy.Spider):
         record['imagens']="|".join(images_list) 
         record['tamanhos']=json.dumps(opcoes_list)
         url = 'https://www.artwalk.com.br/buscapagina?PS=999&sl={}&cc=999&sm=0&fq=spec_fct_11:{}'.format(sl,productReference)
-        yield scrapy.Request(url=url, callback=self.other_links, meta=dict(record=record))
+        yield scrapy.Request(dont_filter=True, url =url, callback=self.other_links,  meta=dict(record=record))
     
    
     def other_links(self, response):

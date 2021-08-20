@@ -35,7 +35,7 @@ class NikeNovidadesSpider(scrapy.Spider):
             'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',
         ]
         for url in urls:
-            yield scrapy.Request(url=url, callback=self.parse)
+            yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)
        
         self.remove()
        
@@ -90,14 +90,14 @@ class NikeNovidadesSpider(scrapy.Spider):
                 record['price']=item.xpath('.//span[contains(@class,"produto__preco_por")]/text()').get()   
                 if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     
                     self.add_name(self.name, str(id))     
-                    yield scrapy.Request(url=prod_url, callback=self.details, meta=dict(record=record))
+                    yield scrapy.Request(dont_filter=True, url =prod_url, callback=self.details,  meta=dict(record=record))
 
         if(finish == False):
             uri = response.url.split('&p=')
             part = uri[0]
             page = int(uri[1]) + 1
             url = '{}&p={}'.format(part, str(page))
-            yield scrapy.Request(url=url, callback=self.parse)
+            yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)
 
     def details(self, response):  
         record = Inserter()
