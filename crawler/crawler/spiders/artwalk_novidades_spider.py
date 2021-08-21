@@ -33,8 +33,6 @@ class ArtwalkNovidadesSpider(scrapy.Spider):
         ]
         for url in urls:
             yield scrapy.Request(dont_filter=True, url =url, callback=self.extract_sl)
-            
-        self.remove()  
                 
     def add_name(self, key, id):
         if key in  self.encontrados:
@@ -42,20 +40,6 @@ class ArtwalkNovidadesSpider(scrapy.Spider):
         else:
             self.encontrados[key] = [id]
 
-    def remove(self):
-        print("Removendo.....")
-        
-        #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
-        results = self.database.search(['id'],{
-            'spider':self.name                        
-        })        
-        rows = [str(row[0]).strip() for row in results]            
-        for row in rows:                    
-            if len( [id for id in self.encontrados[self.name] if str(id) == str(row)]) == 0 :                  
-                record = Deleter()
-                record['id']=row                     
-                yield record  
-        print(len(self.encontrados))
 
     def extract_sl(self, response):
         scripts = response.xpath('//script/text()').getall()

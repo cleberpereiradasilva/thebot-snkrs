@@ -23,7 +23,6 @@ class NikeRestockSpider(scrapy.Spider):
         for h in [str(row[0]).strip() for row in results]:
             self.add_name(self.name, str(h)) 
 
-
     def start_requests(self):       
         urls = [            
             'https://www.nike.com.br/Snkrs/Estoque?demanda=true&p=1',            
@@ -31,7 +30,6 @@ class NikeRestockSpider(scrapy.Spider):
 
         for url in urls:
             yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)  
-        self.remove()
        
     def add_name(self, key, id):
         if key in  self.encontrados:
@@ -39,29 +37,17 @@ class NikeRestockSpider(scrapy.Spider):
         else:
             self.encontrados[key] = [id]
 
-    def remove(self):
-        #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
-        results = self.database.search(['id'],{
-            'spider':self.name                        
-        })        
-        rows = [str(row[0]).strip() for row in results]            
-        for row in rows:                    
-            if len( [id for id in self.encontrados[self.name] if str(id) == str(row)]) == 0 :                  
-                record = Deleter()
-                record['id']=row                     
-                yield record 
-
     def parse(self, response):     
         finish  = True
         tab = response.url.replace('?','/').split('/')[4]  
-        categoria = 'nike_restock' if tab == 'Estoque' else 'nov-calcados'
+        categoria = 'nike_restock'
         #pega todos os ites da pagina, apenas os nomes dos tenis
         nodes = [ name for name in response.xpath('//div[contains(@class,"produto produto--")]') ]
         if(len(nodes) > 0 ):
-            finish=True       
+            finish=False       
 
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
-        for item in nodes[0:10]: 
+        for item in nodes: 
             name = item.xpath('.//h2//span/text()').get()           
             prod_url = item.xpath('.//a/@href').get()
             id = 'ID{}-{}-{}$'.format(item.xpath('.//a/img/@alt').get().split(".")[-1].strip(), categoria, tab)

@@ -1,5 +1,5 @@
 import scrapy
-import json
+import json, time
 from datetime import datetime
 try:
     from crawler.crawler.items import Inserter, Updater, Deleter
@@ -21,7 +21,7 @@ class NikeNovidadesSpider(scrapy.Spider):
             'spider':self.name,
         })        
         for h in [str(row[0]).strip() for row in results]:
-            self.add_name(self.name, str(h)) 
+            self.add_name(self.name, str(h))         
 
     def start_requests(self):
         urls = [
@@ -37,25 +37,11 @@ class NikeNovidadesSpider(scrapy.Spider):
         for url in urls:
             yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)
        
-        self.remove()
-       
     def add_name(self, key, id):
         if key in  self.encontrados:
             self.encontrados[key].append(id)
         else:
             self.encontrados[key] = [id]
-
-    def remove(self):
-        #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
-        results = self.database.search(['id'],{
-            'spider':self.name                        
-        })        
-        rows = [str(row[0]).strip() for row in results]            
-        for row in rows:                    
-            if len( [id for id in self.encontrados[self.name] if str(id) == str(row)]) == 0 :                  
-                record = Deleter()
-                record['id']=row                     
-                yield record  
 
     def parse(self, response):
         nodes = response.xpath('//div[@data-codigo]')  
@@ -63,14 +49,13 @@ class NikeNovidadesSpider(scrapy.Spider):
         tab = 'Feminino' if 'fem' in response.url else 'Masculino'
         categoria = 'nike_lancamentos_snkrs' if 'Calcados' in response.url else 'nike_lancamentos'
         if(len(nodes) > 0 ):
-            finish=True   
+            finish=False   
 
-        for item in nodes[0:10]:
+        for item in nodes:
             id = 'ID{}-{}-{}$'.format(item.xpath('./@data-codigo').get().strip(), categoria,tab)            
             name = item.xpath('.//a[@class="produto__nome"]/text()').get()
             prod_url = item.xpath('.//a/@href').get()           
             comprar = False if item.xpath('.//a//div[contains(@style,"display:none")]/text()').get() == None else True
-            self.add_name(self.name, str(id))
 
             if comprar == True:                
                 #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar                            
@@ -87,16 +72,18 @@ class NikeNovidadesSpider(scrapy.Spider):
                 record['imagens']=''  
                 record['tamanhos']=''    
                 record['outros']=''
-                record['price']=item.xpath('.//span[contains(@class,"produto__preco_por")]/text()').get()   
-                if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     
-                    self.add_name(self.name, str(id))     
+                record['price']=item.xpath('.//span[contains(@class,"produto__preco_por")]/text()').get()                
+                if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:
+                    self.add_name(self.name, str(id))                         
                     yield scrapy.Request(dont_filter=True, url =prod_url, callback=self.details,  meta=dict(record=record))
+                
 
         if(finish == False):
             uri = response.url.split('&p=')
             part = uri[0]
             page = int(uri[1]) + 1
             url = '{}&p={}'.format(part, str(page))
+            time.sleep(10)
             yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)
 
     def details(self, response):  

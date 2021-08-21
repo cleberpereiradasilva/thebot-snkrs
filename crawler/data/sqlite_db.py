@@ -18,7 +18,13 @@ class Sqlite():
             cursor.execute('''CREATE TABLE config (channels text)''')
             database.commit()
         except:
-            pass            
+            pass  
+
+        try:
+            cursor.execute('''CREATE TABLE ultimos (id text)''')
+            database.commit()
+        except:
+            pass             
         
         self.cursor = cursor
         self.database = database
@@ -36,6 +42,22 @@ class Sqlite():
         self.cursor.execute('insert into config values("{}")'.format(config))
         self.database.commit()
         return self.get_config()
+
+    def insert_ultimos(self, item):         
+        self.cursor.execute("insert into ultimos(id) values (?)", 
+            (                    
+                item['id'],                  
+            ))
+        self.database.commit()  
+
+    def delete_ultimos(self):
+        self.cursor.execute("delete from ultimos")
+        self.database.commit()
+
+    def get_ultimos(self):
+        query = 'SELECT id FROM ultimos'
+        return [row for row in self.cursor.execute(query)]
+        
 
     def insert(self, item):          
         try:      
@@ -85,10 +107,10 @@ class Sqlite():
                 item['prod_url'], 
             ))
         self.database.commit()
-    def delete(self, item):
+    def delete(self, id):
         self.cursor.execute("delete from products where id = ? ", 
             (                
-                item['id'], 
+                id, 
             ))
         self.database.commit()       
         logging.log(logging.INFO, "Removendo...!")
@@ -103,6 +125,10 @@ class Sqlite():
 
     def search(self, fields, item):
         query = 'SELECT {} FROM products where {}'.format(','.join(fields), ' and '.join(['lower({})="{}"'.format(k, str(item[k]).lower()) for k in item.keys()]) )        
+        return [row for row in self.cursor.execute(query)]
+
+    def get_all(self):
+        query = 'SELECT id FROM products'        
         return [row for row in self.cursor.execute(query)]
     
     def search_name(self, word):

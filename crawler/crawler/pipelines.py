@@ -18,9 +18,9 @@ class CrawlerPipeline:
         self.connection.update(item)
         logging.log(logging.WARNING, "Item atualizado no database") 
 
-    def delete(self, item):             
-        self.connection.delete(item)
-        logging.log(logging.WARNING, "Item removido do database") 
+    def add_delete(self, item):             
+        self.connection.insert_ultimos(item)
+        
 
     def process_item(self, item, spider):
         valid = True       
@@ -34,6 +34,7 @@ class CrawlerPipeline:
             if isinstance(item, Updater):    
                 self.atualizar(item)     
             if isinstance(item, Deleter):    
-                self.delete(item)               
+                self.add_delete(item)               
         return item
-        
+
+   

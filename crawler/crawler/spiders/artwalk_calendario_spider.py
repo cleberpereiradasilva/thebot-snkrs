@@ -1,10 +1,10 @@
 import scrapy, json
 from datetime import datetime
 try:
-    from crawler.crawler.items import Inserter, Updater, Deleter
+    from crawler.crawler.items import Inserter, Deleter
     from crawler.data.database import Database
 except:
-    from crawler.items import Inserter, Updater, Deleter
+    from crawler.items import Inserter, Deleter
     from data.database import Database
 
 class ArtwalkCalendarioSpider(scrapy.Spider):
@@ -30,30 +30,19 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
         ]
         for url in urls:
             yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)  
-        self.remove()
-       
+               
     def add_name(self, key, id):
         if key in  self.encontrados:
             self.encontrados[key].append(id)
         else:
             self.encontrados[key] = [id]
 
-    def remove(self):
-        #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
-        results = self.database.search(['id'],{
-            'spider':self.name                        
-        })        
-        rows = [str(row[0]).strip() for row in results]            
-        for row in rows:                    
-            if len( [id for id in self.encontrados[self.name] if str(id) == str(row)]) == 0 :                  
-                record = Deleter()
-                record['id']=row                     
-                yield record   
+   
 
 
     def parse(self, response):                        
-        tab = 'artwalk_snkrs' 
-        categoria = 'artwalk_snkrs' 
+        tab = 'artwalk_calendario' 
+        categoria = 'artwalk_calendario' 
         
         #pega todos os ites da pagina, apenas os nomes dos tenis
         nodes = [ name for name in response.xpath('//div[@class="box-banner"]') ]      
@@ -61,7 +50,10 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
         #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar
         for item in nodes:  
             prod_url = 'https://www.artwalk.com.br{}'.format(item.xpath('.//a/@href').get())            
-            id = 'ID{}$'.format(prod_url)                        
+            id = 'ID{}$'.format(prod_url)  
+            deleter = Deleter()                      
+            deleter['id']=id
+            yield deleter
             record = Inserter()
             record['id']=id 
             record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
@@ -92,7 +84,7 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
         record['imagens']="|".join(images_list)    
         quando = 'Aguarde...'.ljust(18, '\u200B')
         if aguardando:
-            quando = 'Lançamento 10/10/2010 às 10H'.format(aguardando)        
+            quando = 'Lançamento {} às 10H'.format(aguardando)        
             
         record['tamanhos']=json.dumps([{"aguardando": quando}])
         yield record              

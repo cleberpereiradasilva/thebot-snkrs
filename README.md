@@ -104,6 +104,9 @@
 ```
 
 {  
+  "artwalk_calendario":{
+    "canal": 0000000000000
+  },
   "artwalk_restock": {
     "canal": 0000000000000    
   },

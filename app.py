@@ -25,6 +25,7 @@ from crawler.crawler.spiders.maze_snkrs_spider import MazeSnkrsSpider
 from crawler.crawler.spiders.nike_calendario_spider import NikeCalendarioSpider
 from crawler.crawler.spiders.nike_novidades_spider import NikeNovidadesSpider
 from crawler.crawler.spiders.nike_restock_spider import NikeRestockSpider
+
 from crawler.crawler import normal_settings as normal_settings 
 from crawler.crawler import nike_settings as nike_settings 
 from discord.ext import tasks
@@ -58,32 +59,41 @@ def run_spider(spider, database):
 
 def r_spiders():
     database = Database()
-    spiders = [
+    spiders = [            
             ArtwalkCalendarioSpider,
+            NikeRestockSpider,         
             ArtwalkNovidadesSpider,
             ArtwalkRestockSpider,            
             GdlpNovidadesSpider,
+            NikeCalendarioSpider,
             GdlpRestockSpider,            
             MazeSnkrsSpider,
             MazeNovidadesSpider,
             MazeRestockSpider,
             MagicfeetNovidadesSpider,
-            MagicfeetSnkrsSpider,
-            # NikeRestockSpider,         
-            # NikeNovidadesSpider,                
-            # NikeCalendarioSpider
+            MagicfeetSnkrsSpider,            
+            NikeNovidadesSpider,            
     ]
 
     for spider in spiders:  
         run_spider(spider, database)
 
 def r_forever():
+    database = Database()
     n = 30
     while True:
         try:
             r_spiders()
         except:
             pass
+        results = database.get_ultimos()
+        get_all = database.get_all()
+        rows = [str(row[0]).strip() for row in get_all]            
+        for row in rows:                    
+            if len( [id for id in results if str(id) == str(row)]) == 0 :                  
+                database.delete(row)
+        database.delete_ultimos()
+
         print('Aguardando {}s'.format(n))
         time.sleep(n)
 
@@ -111,6 +121,9 @@ lista de comandos:
 >canais
 >configurar 
 {  
+    "artwalk_calendario":{
+        "canal": 0000000000000
+    },
     "artwalk_restock": {
         "canal": 0000000000000    
     },
@@ -120,15 +133,12 @@ lista de comandos:
     "artwalk_lancamentos": {
         "canal": 0000000000000    
     },    
-    "guadalupe_lancamentos": {
+    "gdlp_lancamentos": {
         "canal": 0000000000000    
     },
-    "guadalupe_restock": {
+    "gdlp_restock": {
         "canal": 0000000000000    
-    },
-    "guadalupe_snkrs": {
-        "canal": 0000000000000    
-    },
+    },    
     "magicfeet_lancamentos": {
         "canal": 0000000000000    
     },
@@ -321,18 +331,21 @@ def r_discord():
 if __name__ == '__main__':
     database = Database()       
     first_time = database.isEmpty()  
+    inicio = datetime.now().strftime('%Y-%m-%d %H:%M')
+    r_spiders()
+    print(inicio)
+    print(datetime.now().strftime('%Y-%m-%d %H:%M'))
+    # if first_time:
+    #     for i in range(0,2):
+    #         r_spiders()            
+    #         print('Rodada {}'.format(i))
+    #         time.sleep(2)
+    #     database.avisar_todos()
 
-    if first_time:
-        for i in range(0,2):
-            r_spiders()            
-            print('Rodada {}'.format(i))
-            time.sleep(2)
-        database.avisar_todos()
-
-    p2 = multiprocessing.Process(name='p2', target=r_discord)
-    p2.start()
-    time.sleep(5)
-    p1 = multiprocessing.Process(name='p1', target=r_forever)    
-    p1.start()
+    # p2 = multiprocessing.Process(name='p2', target=r_discord)
+    # p2.start()
+    # time.sleep(5)
+    # p1 = multiprocessing.Process(name='p1', target=r_forever)    
+    # p1.start()
 
     

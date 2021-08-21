@@ -31,28 +31,11 @@ class GdlpNovidadesSpider(scrapy.Spider):
         for url in urls:
             yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)  
 
-        self.remove()
-       
     def add_name(self, key, id):
         if key in  self.encontrados:
             self.encontrados[key].append(id)
         else:
             self.encontrados[key] = [id]
-
-    def remove(self):
-        #checa se algum item do banco nao foi encontrado, nesse caso atualiza com o status de remover            
-        results = self.database.search(['id'],{
-            'spider':self.name                        
-        })        
-        rows = [str(row[0]).strip() for row in results]            
-        for row in rows:                    
-            if len( [id for id in self.encontrados[self.name] if str(id) == str(row)]) == 0 :                  
-                record = Deleter()
-                record['id']=row                     
-                yield record  
-
-    
-
 
     def parse(self, response):      
         finish  = True
