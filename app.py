@@ -242,7 +242,10 @@ lista de comandos:
 
         
     async def on_ready(self):
-        print('Logado...')        
+        print('Logado...')  
+        adm_channel = os.environ.get('ADMIN_CHANNEL')    
+        send_to = self.get_channel(int(adm_channel))  
+        await send_to.send("Im ready and waiting for new products...")
         
 
 
@@ -321,9 +324,9 @@ if __name__ == '__main__':
 
     if first_time:
         for i in range(0,2):
-            r_spiders()
-            time.sleep(2)
+            r_spiders()            
             print('Rodada {}'.format(i))
+            time.sleep(2)
         database.avisar_todos()
 
     p2 = multiprocessing.Process(name='p2', target=r_discord)
