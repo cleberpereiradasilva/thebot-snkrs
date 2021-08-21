@@ -72,7 +72,7 @@ def r_spiders():
             MazeRestockSpider,
             MagicfeetNovidadesSpider,
             MagicfeetSnkrsSpider,            
-            NikeNovidadesSpider,            
+            #NikeNovidadesSpider,            
     ]
 
     for spider in spiders:  
@@ -331,21 +331,18 @@ def r_discord():
 if __name__ == '__main__':
     database = Database()       
     first_time = database.isEmpty()  
-    inicio = datetime.now().strftime('%Y-%m-%d %H:%M')
-    r_spiders()
-    print(inicio)
-    print(datetime.now().strftime('%Y-%m-%d %H:%M'))
-    # if first_time:
-    #     for i in range(0,2):
-    #         r_spiders()            
-    #         print('Rodada {}'.format(i))
-    #         time.sleep(2)
-    #     database.avisar_todos()
+    inicio = datetime.now().strftime('%Y-%m-%d %H:%M')   
+    if first_time:
+        for i in range(0,2):
+            r_spiders()            
+            print('Rodada {}'.format(i))
+            time.sleep(2)
+        database.avisar_todos()
 
-    # p2 = multiprocessing.Process(name='p2', target=r_discord)
-    # p2.start()
-    # time.sleep(5)
-    # p1 = multiprocessing.Process(name='p1', target=r_forever)    
-    # p1.start()
+    p2 = multiprocessing.Process(name='p2', target=r_discord)
+    p2.start()
+    time.sleep(5)
+    p1 = multiprocessing.Process(name='p1', target=r_forever)    
+    p1.start()
 
     
