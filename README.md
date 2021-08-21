@@ -116,15 +116,12 @@
   "artwalk_lancamentos": {
     "canal": 0000000000000    
   },    
-  "guadalupe_lancamentos": {
+  "gdlp_lancamentos": {
     "canal": 0000000000000    
   },
-  "guadalupe_restock": {
+  "gdlp_restock": {
     "canal": 0000000000000    
-  },
-  "guadalupe_snkrs": {
-    "canal": 0000000000000    
-  },
+  },  
   "magicfeet_lancamentos": {
     "canal": 0000000000000    
   },
