@@ -1,5 +1,5 @@
 import scrapy
-import json
+import json, time
 from datetime import datetime
 try:
     from crawler.crawler.items import Inserter, Updater, Deleter
@@ -11,7 +11,8 @@ except:
 class MazeNovidadesSpider(scrapy.Spider):
     name = "maze_lancamentos"
     encontrados = {}   
-    def __init__(self, database=None):
+    def __init__(self, database=None, url=None):
+        self.url = url
         if database == None:
             self.database = Database()
         else:    
@@ -25,16 +26,18 @@ class MazeNovidadesSpider(scrapy.Spider):
             self.add_name(self.name, str(h)) 
 
     def start_requests(self):       
-        urls = [                        
-            'https://www.maze.com.br/categoria/roupas/camisetas',
-            'https://www.maze.com.br/categoria/roupas/calcas',
-            'https://www.maze.com.br/categoria/roupas/saia',
-            'https://www.maze.com.br/categoria/acessorios/meias',
-            'https://www.maze.com.br/categoria/acessorios/gorros',
-            'https://www.maze.com.br/categoria/acessorios/bones',
-        ]
-        for url in urls:
-            yield scrapy.Request(dont_filter=True, url =url, callback=self.extract_filter)  
+        # urls = [                        
+        #     'https://www.maze.com.br/categoria/roupas/camisetas',
+        #     'https://www.maze.com.br/categoria/roupas/calcas',
+        #     'https://www.maze.com.br/categoria/roupas/saia',
+        #     'https://www.maze.com.br/categoria/acessorios/meias',
+        #     'https://www.maze.com.br/categoria/acessorios/gorros',
+        #     'https://www.maze.com.br/categoria/acessorios/bones',
+        # ]
+        # for url in urls:
+        #     yield scrapy.Request(dont_filter=True, url =url, callback=self.extract_filter)  
+        yield scrapy.Request(dont_filter=True, url=self.url, callback=self.extract_filter)
+    
 
     def add_name(self, key, id):
         if key in  self.encontrados:
@@ -80,7 +83,7 @@ class MazeNovidadesSpider(scrapy.Spider):
             record['outros']=''
             record['price']='R$ {}'.format(price)
             if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     
-                self.add_name(self.name, str(id))  
+                self.add_name(self.name, str(id))                  
                 yield scrapy.Request(dont_filter=True, url =prod_url, callback=self.details,  meta=(dict(record=record)))
 
         if(finish == False):
@@ -88,6 +91,7 @@ class MazeNovidadesSpider(scrapy.Spider):
             part = uri[0]
             page = int(uri[1]) + 1
             url = '{}&pageNumber={}'.format(part, str(page))
+            time.sleep(1)
             yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)
 
     def details(self, response):  

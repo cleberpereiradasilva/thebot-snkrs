@@ -1,5 +1,5 @@
 import scrapy
-import json
+import json, time
 from datetime import datetime
 try:
     from crawler.crawler.items import Inserter, Updater, Deleter
@@ -74,6 +74,7 @@ class NikeRestockSpider(scrapy.Spider):
             part = uri[0]
             page = int(uri[1]) + 1
             url = '{}&p={}'.format(part, str(page))
+            time.sleep(3)
             yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)
             
     def details(self, response):

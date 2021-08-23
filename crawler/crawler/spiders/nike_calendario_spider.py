@@ -1,4 +1,4 @@
-import scrapy,json
+import scrapy,json, time
 from datetime import datetime
 try:
     from crawler.crawler.items import Inserter, Updater, Deleter
@@ -76,6 +76,7 @@ class NikeCalendarioSpider(scrapy.Spider):
             part = uri[0]
             page = int(uri[1]) + 1
             url = '{}&p={}'.format(part, str(page))
+            time.sleep(3)
             yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)
          
         

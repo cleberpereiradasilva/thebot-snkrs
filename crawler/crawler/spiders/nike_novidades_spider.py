@@ -1,5 +1,6 @@
 import scrapy
 import json, time
+import urllib
 from datetime import datetime
 try:
     from crawler.crawler.items import Inserter, Updater, Deleter
@@ -7,10 +8,12 @@ try:
 except:
     from crawler.items import Inserter, Updater, Deleter
     from data.database import Database
-class NikeNovidadesSpider(scrapy.Spider):
+class NikeNovidadesSpider(scrapy.Spider):    
     name = "nike_lancamentos"    
     encontrados = {}
-    def __init__(self, database=None):
+    API_KEY = '26d1754da71447cf2f97a78b57fe6d67'
+    def __init__(self, database=None, url=None):
+        self.url = url
         if database == None:
             self.database = Database()
         else:    
@@ -21,21 +24,29 @@ class NikeNovidadesSpider(scrapy.Spider):
             'spider':self.name,
         })        
         for h in [str(row[0]).strip() for row in results]:
-            self.add_name(self.name, str(h))         
+            self.add_name(self.name, str(h))     
+
+    
+
+    def get_scraperapi_url(self, url):
+        payload = {'api_key': self.API_KEY, 'url': url}
+        proxy_url = 'http://api.scraperapi.com/?' + urllib.parse.urlencode(payload)
+        return proxy_url    
 
     def start_requests(self):
-        urls = [
-            'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',
-            'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',
+        # urls = [
+        #     'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',
+        #     'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',
 
-            'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',
-            'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',
+        #     'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',
+        #     'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',
 
-            'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',
-            'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',
-        ]
-        for url in urls:
-            yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)
+        #     'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',
+        #     'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',
+        # ]
+        # for url in urls:
+        #     yield scrapy.Request(dont_filter=True, url=url, callback=self.parse)
+        yield scrapy.Request(dont_filter=True, url=self.url, callback=self.parse)
        
     def add_name(self, key, id):
         if key in  self.encontrados:
@@ -49,7 +60,7 @@ class NikeNovidadesSpider(scrapy.Spider):
         tab = 'Feminino' if 'fem' in response.url else 'Masculino'
         categoria = 'nike_lancamentos_snkrs' if 'Calcados' in response.url else 'nike_lancamentos'
         if(len(nodes) > 0 ):
-            finish=False   
+            finish=False
 
         for item in nodes:
             id = 'ID{}-{}-{}$'.format(item.xpath('./@data-codigo').get().strip(), categoria,tab)            
@@ -74,7 +85,7 @@ class NikeNovidadesSpider(scrapy.Spider):
                 record['outros']=''
                 record['price']=item.xpath('.//span[contains(@class,"produto__preco_por")]/text()').get()                
                 if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:
-                    self.add_name(self.name, str(id))                         
+                    self.add_name(self.name, str(id))                       
                     yield scrapy.Request(dont_filter=True, url =prod_url, callback=self.details,  meta=dict(record=record))
                 
 
@@ -83,7 +94,7 @@ class NikeNovidadesSpider(scrapy.Spider):
             part = uri[0]
             page = int(uri[1]) + 1
             url = '{}&p={}'.format(part, str(page))
-            time.sleep(10)
+            time.sleep(3)
             yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)
 
     def details(self, response):  

@@ -6,6 +6,7 @@ import time
 import sys
 from multiprocessing import Process, Queue
 from twisted.internet import reactor
+
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.log import configure_logging
 from crawler.data.database import Database
@@ -31,16 +32,25 @@ from crawler.crawler import nike_settings as nike_settings
 from discord.ext import tasks
 from scrapy.settings import Settings
 
+#from twisted.python import log
+# import logging
+# logging.basicConfig(filemode='a', filename='scrapy_log.txt')
+# observer = log.PythonLoggingObserver()
+# observer.start()
 
-def run_spider(spider, database):
+
+def run_spider(spider, database, url=None):
     def f(q):
         try:
-            my_settings = nike_settings if 'nike' in str(spider) else normal_settings
+            my_settings = normal_settings if 'nike' in str(spider) else normal_settings
             crawler_settings = Settings()
             configure_logging()
             crawler_settings.setmodule(my_settings)                       
             runner = CrawlerRunner(settings=crawler_settings)
-            runner.crawl(spider, database=database)            
+            if url:                
+                runner.crawl(spider, database=database,url=url)
+            else:
+                runner.crawl(spider, database=database)
             deferred = runner.join()
             deferred.addBoth(lambda _: reactor.stop())
             reactor.run()
@@ -62,21 +72,43 @@ def r_spiders():
     spiders = [            
             ArtwalkCalendarioSpider,
             NikeRestockSpider,         
-            ArtwalkNovidadesSpider,
-            ArtwalkRestockSpider,            
-            GdlpNovidadesSpider,
-            NikeCalendarioSpider,
-            GdlpRestockSpider,            
             MazeSnkrsSpider,
-            MazeNovidadesSpider,
+            ArtwalkNovidadesSpider,            
+            GdlpNovidadesSpider,
+            MagicfeetSnkrsSpider,
+            ArtwalkRestockSpider,
+            NikeCalendarioSpider,
+            GdlpRestockSpider,
             MazeRestockSpider,
-            MagicfeetNovidadesSpider,
-            MagicfeetSnkrsSpider,            
-            #NikeNovidadesSpider,            
+            MagicfeetNovidadesSpider,            
     ]
 
     for spider in spiders:  
         run_spider(spider, database)
+
+    urls = [
+            'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',
+            'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',
+
+            'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',
+            'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',
+
+            'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',
+            'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',
+        ]
+    for url in urls:
+        run_spider(NikeNovidadesSpider, database, url)
+
+    urls = [                        
+            'https://www.maze.com.br/categoria/roupas/camisetas',
+            'https://www.maze.com.br/categoria/roupas/calcas',
+            'https://www.maze.com.br/categoria/roupas/saia',
+            'https://www.maze.com.br/categoria/acessorios/meias',
+            'https://www.maze.com.br/categoria/acessorios/gorros',
+            'https://www.maze.com.br/categoria/acessorios/bones',
+        ]
+    for url in urls:
+        run_spider(MazeNovidadesSpider, database, url)
 
 def r_forever():
     database = Database()
@@ -331,7 +363,11 @@ def r_discord():
 if __name__ == '__main__':
     database = Database()       
     first_time = database.isEmpty()  
-    inicio = datetime.now().strftime('%Y-%m-%d %H:%M')   
+    # inicio = datetime.now().strftime('%Y-%m-%d %H:%M') 
+    # r_spiders()
+    # print(inicio)
+    # print(datetime.now().strftime('%Y-%m-%d %H:%M'))
+    
     if first_time:
         for i in range(0,2):
             r_spiders()            
