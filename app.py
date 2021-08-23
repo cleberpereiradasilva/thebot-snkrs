@@ -285,9 +285,9 @@ lista de comandos:
         
     async def on_ready(self):
         print('Logado...')  
-        #adm_channel = os.environ.get('ADMIN_CHANNEL')    
-        #send_to = self.get_channel(int(adm_channel))  
-        #await send_to.send("Im ready and waiting for new products...")
+        adm_channel = os.environ.get('ADMIN_CHANNEL')    
+        send_to = self.get_channel(int(adm_channel))  
+        await send_to.send("Im ready and waiting for new products...")
         
 
 
@@ -367,7 +367,7 @@ if __name__ == '__main__':
     # r_spiders()
     # print(inicio)
     # print(datetime.now().strftime('%Y-%m-%d %H:%M'))
-    
+
     if first_time:
         for i in range(0,2):
             r_spiders()            
