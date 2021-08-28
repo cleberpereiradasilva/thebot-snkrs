@@ -2,10 +2,10 @@ import scrapy
 import json, time
 from datetime import datetime
 try:
-    from crawler.crawler.items import Inserter, Updater, Deleter
+    from crawler.crawler.items import Inserter,  Deleter
     from crawler.data.database import Database
 except:
-    from crawler.items import Inserter, Updater, Deleter
+    from crawler.items import Inserter,  Deleter
     from data.database import Database
 class NikeRestockSpider(scrapy.Spider):
     name = "nike_restock"
@@ -22,6 +22,8 @@ class NikeRestockSpider(scrapy.Spider):
         })        
         for h in [str(row[0]).strip() for row in results]:
             self.add_name(self.name, str(h)) 
+        
+        self.first_time = len(results) 
 
     def start_requests(self):       
         urls = [            
@@ -37,10 +39,13 @@ class NikeRestockSpider(scrapy.Spider):
         else:
             self.encontrados[key] = [id]
 
-    def parse(self, response):     
+    def _parse(self, response):     
         finish  = True
         tab = response.url.replace('?','/').split('/')[4]  
         categoria = 'nike_restock'
+        
+        send = 'avisar' if int(self.first_time) > 0 else 'avisado'
+
         #pega todos os ites da pagina, apenas os nomes dos tenis
         nodes = [ name for name in response.xpath('//div[contains(@class,"produto produto--")]') ]
         if(len(nodes) > 0 ):
@@ -51,6 +56,9 @@ class NikeRestockSpider(scrapy.Spider):
             name = item.xpath('.//h2//span/text()').get()           
             prod_url = item.xpath('.//a/@href').get()
             id = 'ID{}-{}-{}$'.format(item.xpath('.//a/img/@alt').get().split(".")[-1].strip(), categoria, tab)
+            deleter = Deleter()                      
+            deleter['id']=id
+            yield deleter
             record = Inserter()
             record['id']=id
             record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
@@ -60,7 +68,7 @@ class NikeRestockSpider(scrapy.Spider):
             record['name']=name 
             record['categoria']=categoria 
             record['tab']=tab 
-            record['send']='avisar'
+            record['send']=send
             record['imagens']=''  
             record['tamanhos']=''    
             record['outros']=''
@@ -76,6 +84,22 @@ class NikeRestockSpider(scrapy.Spider):
             url = '{}&p={}'.format(part, str(page))
             time.sleep(3)
             yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)
+    
+    def parse(self, response):
+        try:
+            self.parse(response)
+        except Exception as e:
+            print("########## ERROR ON PARSE ##########")
+            print("########## ERROR ON PARSE ##########")
+            print("########## ERROR ON PARSE ##########")
+            print("########## ERROR ON PARSE ##########")
+            print("########## ERROR ON PARSE ##########")
+            print("########## ERROR ON PARSE ##########")
+            print("########## ERROR ON PARSE ##########")
+            print(e)
+            print('################################################################')
+            time.sleep(10)
+
             
     def details(self, response):
         record = Inserter()

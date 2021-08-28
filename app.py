@@ -10,6 +10,7 @@ from twisted.internet import reactor
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.log import configure_logging
 from crawler.data.database import Database
+from crawler.data.sqlite_db import Sqlite
 from discord.ext import tasks
 from datetime import datetime
 from crawler.crawler.spiders.maze_snkrs_spider import MazeSnkrsSpider
@@ -32,25 +33,28 @@ from crawler.crawler import nike_settings as nike_settings
 from discord.ext import tasks
 from scrapy.settings import Settings
 
-#from twisted.python import log
-# import logging
-# logging.basicConfig(filemode='a', filename='scrapy_log.txt')
-# observer = log.PythonLoggingObserver()
-# observer.start()
+from twisted.python import log
+import logging
+logging.basicConfig(filemode='a', filename='scrapy_log.txt')
+observer = log.PythonLoggingObserver()
+observer.start()
+    
+lite_db = Sqlite() 
 
 
-def run_spider(spider, database, url=None):
+
+def run_spider(spider, url=None):
     def f(q):
         try:
-            my_settings = normal_settings if 'nike' in str(spider) else normal_settings
+            my_settings = nike_settings if 'nike' in str(spider) else normal_settings
             crawler_settings = Settings()
             configure_logging()
             crawler_settings.setmodule(my_settings)                       
             runner = CrawlerRunner(settings=crawler_settings)
             if url:                
-                runner.crawl(spider, database=database,url=url)
+                runner.crawl(spider, url=url, database=None)
             else:
-                runner.crawl(spider, database=database)
+                runner.crawl(spider, )
             deferred = runner.join()
             deferred.addBoth(lambda _: reactor.stop())
             reactor.run()
@@ -67,8 +71,7 @@ def run_spider(spider, database, url=None):
     if result is not None:
         raise result
 
-def r_spiders():
-    database = Database()
+def r_spiders():    
     spiders = [            
             ArtwalkCalendarioSpider,
             NikeRestockSpider,         
@@ -84,35 +87,31 @@ def r_spiders():
     ]
 
     for spider in spiders:  
-        run_spider(spider, database)
+        run_spider(spider)
 
-    urls = [
-            'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',
-            'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',
-
-            'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',
-            'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',
-
-            'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',
-            'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',
+    spiders = [
+            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1'},
+            {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/camisetas'},            
+            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1'},            
+            {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/meias'},
+            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1'},
+            {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/saia'},
+            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1'},
+            {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/calcas'},
+            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1'},
+            {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/gorros'},
+            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1'},            
+            {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/bones'},
         ]
-    for url in urls:
-        run_spider(NikeNovidadesSpider, database, url)
+    for spider in spiders:
+        run_spider(spider['spider'], spider['url'])
+        time.sleep(5)
 
-    urls = [                        
-            'https://www.maze.com.br/categoria/roupas/camisetas',
-            'https://www.maze.com.br/categoria/roupas/calcas',
-            'https://www.maze.com.br/categoria/roupas/saia',
-            'https://www.maze.com.br/categoria/acessorios/meias',
-            'https://www.maze.com.br/categoria/acessorios/gorros',
-            'https://www.maze.com.br/categoria/acessorios/bones',
-        ]
-    for url in urls:
-        run_spider(MazeNovidadesSpider, database, url)
+  
 
 def r_forever():
-    database = Database()
-    n = 30
+    database = Database()     
+    n = 15
     while True:
         try:
             r_spiders()
@@ -123,9 +122,10 @@ def r_forever():
         rows = [str(row[0]).strip() for row in get_all]            
         for row in rows:                    
             if len( [id for id in results if str(id) == str(row)]) == 0 :                  
+                print('Removendo {}'.format(row))               
+                time.sleep(1)
                 database.delete(row)
         database.delete_ultimos()
-
         print('Aguardando {}s'.format(n))
         time.sleep(n)
 
@@ -134,12 +134,12 @@ def r_forever():
 class MyClient(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)        
-        # start the task to run in the background                     
-        self.database = Database()
+        # start the task to run in the background                             
+        self.database = Database() 
         self.database.avisar_todos()
         self.first_time = self.database.isEmpty()
         try:
-            self.channels = json.loads(self.database.get_config().replace("'",'"'))
+            self.channels = json.loads(lite_db.get_config().replace("'",'"'))
         except:
             self.channels = {}
         self.my_background_task.start()
@@ -227,7 +227,8 @@ lista de comandos:
                 result_list = '\n'.join([name[0] for name in results])
                 await send_to.send('Segue resultados da pesquisa:\n{}'.format(result_list))
                 
-        except Exception as e:                        
+        except Exception as e:
+            print(e)                    
             await send_to.send("Erro ao buscar registros!")
         return 
 
@@ -239,6 +240,16 @@ lista de comandos:
         except Exception as e:                        
             await send_to.send("Erro ao remover os dados! Nada foi perdido.")
         return 
+
+    async def totais(self, adm_channel):
+        send_to = self.get_channel(int(adm_channel))        
+        try:            
+            results = self.database.totais()   
+            result_list = '\n'.join(["{}: {}".format(data[0], data[1]) for data in results])         
+            await send_to.send('Segue consolidado:\n{}'.format(result_list))
+        except Exception as e:                        
+            await send_to.send("Erro ao buscar os dados!")
+        return 
     
     async def set_channels(self, channels, adm_channel):
         send_to = self.get_channel(int(adm_channel))
@@ -246,10 +257,10 @@ lista de comandos:
         try:
             config = channels.replace('>configurar','')            
             channels_temp = json.loads(config)
-            self.channels = json.loads(self.database.set_config(channels_temp).replace("'",'"'))                        
+            self.channels = json.loads(lite_db.set_config(channels_temp).replace("'",'"'))                        
             await send_to.send("Dados atualizados com sucesso!")            
         except:
-            self.channels = json.loads(self.database.set_config(bk_channels).replace("'",'"'))
+            self.channels = json.loads(lite_db.set_config(bk_channels).replace("'",'"'))
             await send_to.send("Erro ao atualizar os dados! Nada foi perdido.")
         return 
 
@@ -280,6 +291,9 @@ lista de comandos:
         if message.content.startswith('>truncate'):
            await self.delete_all(int(adm_channel))
 
+        if message.content.startswith('>totais'):
+           await self.totais(int(adm_channel))
+
         return
 
         
@@ -306,7 +320,7 @@ lista de comandos:
         print(' ============ DISCORD ===============')
         for channel in self.channels:                      
             channel_id = int(self.channels[channel]['canal'])            
-            send_to = self.get_channel(channel_id)                                       
+            send_to = self.get_channel(channel_id)
             rows = self.database.avisos(channel)                                
             for row in rows:               
                 tamanhos = json.loads(row['tamanhos']) 
@@ -316,7 +330,7 @@ lista de comandos:
                 if 'aguardando' in row['tamanhos']:
                     embed = discord.Embed(title=message, url=row['url'], 
                         description=tamanho_desc, color=3066993) #,color=Hex code
-                    embed.set_thumbnail(url=row['imagens'][0])                                               
+                    embed.set_thumbnail(url=row['imagens'].split('|')[0])                                               
                     await send_to.send(embed=embed)
                 else:
                     description_text='**Código de estilos: ** {}\n**Preço: ** {}\n\n'.format(row['codigo'],row['price'])
@@ -325,7 +339,7 @@ lista de comandos:
 
                     embed = discord.Embed(title=message, url=row['url'], 
                         description='{}{}{}'.format(description_text,tamanho_text,links_text ), color=3066993) #,color=Hex code        
-                    embed.set_thumbnail(url=row['imagens'][0])                
+                    embed.set_thumbnail(url=row['imagens'].split('|')[0])                
 
                     for idx, outros in enumerate(row['outros'][1:3]):                    
                         embed.add_field(name='Link {}'.format(idx+1), value='[**aqui**]({})'.format(outros), inline=True)                    
@@ -345,34 +359,24 @@ def r_discord():
         client.run(key)
         
     except:
-        print(' ')
-        print(' ')
-        print(' ')
+        print(' ')      
         print(' ********* ERROR NO DISCORD ********** ')
-        print(' ********* ERROR NO DISCORD ********** ')
-        print(' ********* ERROR NO DISCORD ********** ')
-        print(' ********* ERROR NO DISCORD ********** ')
-        print(' ********* ERROR NO DISCORD ********** ')
-        print(' ********* ERROR NO DISCORD ********** ')
-        print(' ********* ERROR NO DISCORD ********** ')
-        print(' ')
-        print(' ')
+        print(' ********* ERROR NO DISCORD ********** ')       
         print(' ')
 
 
 if __name__ == '__main__':
-    database = Database()       
-    first_time = database.isEmpty()  
-    # inicio = datetime.now().strftime('%Y-%m-%d %H:%M') 
-    # r_spiders()
-    # print(inicio)
-    # print(datetime.now().strftime('%Y-%m-%d %H:%M'))
+    database = Database()   
+    # database.delete_all()   
+    # print('Removendo...')
+    # time.sleep(10)
 
+    first_time = database.isEmpty()    
     if first_time:
         for i in range(0,2):
-            r_spiders()            
+            r_spiders()
             print('Rodada {}'.format(i))
-            time.sleep(2)
+            time.sleep(15)
         database.avisar_todos()
 
     p2 = multiprocessing.Process(name='p2', target=r_discord)

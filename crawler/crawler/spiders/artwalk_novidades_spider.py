@@ -25,6 +25,8 @@ class ArtwalkNovidadesSpider(scrapy.Spider):
         })        
         for h in [str(row[0]).strip() for row in results]:
             self.add_name(self.name, str(h)) 
+        
+        self.first_time = len(results) 
 
 
     def start_requests(self):
@@ -55,6 +57,9 @@ class ArtwalkNovidadesSpider(scrapy.Spider):
         categoria = 'artwalk_lancamentos' 
         sl = response.meta['sl'].split('sl=')[1].split('&')[0]
         
+        
+        send = 'avisar' if int(self.first_time) > 0 else 'avisado'
+
         #pega todos os ites da pagina, apenas os nomes dos tenis
         nodes = [ name for name in response.xpath('//div[@class="product-item-container"]') ]
 
@@ -70,7 +75,10 @@ class ArtwalkNovidadesSpider(scrapy.Spider):
             if disponivel:         
                 if not "Produto indis" in disponivel:                
                     codigo_parts = prod_url.split('-')            
-                    id = 'ID{}$'.format(''.join(codigo_parts[-3:]))                   
+                    id = 'ID{}$'.format(''.join(codigo_parts[-3:])) 
+                    deleter = Deleter()                      
+                    deleter['id']=id
+                    yield deleter                  
                     record = Inserter()
                     record['id']=id 
                     record['codigo']=''
@@ -80,7 +88,7 @@ class ArtwalkNovidadesSpider(scrapy.Spider):
                     record['name']=name 
                     record['categoria']=categoria 
                     record['tab']=tab 
-                    record['send']='avisar'  
+                    record['send']=send  
                     record['imagens']=''  
                     record['tamanhos']=''    
                     record['price']=price

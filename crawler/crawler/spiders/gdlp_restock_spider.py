@@ -23,7 +23,9 @@ class GdlpRestockSpider(scrapy.Spider):
             'spider':self.name,
         })        
         for h in [str(row[0]).strip() for row in results]:
-            self.add_name(self.name, str(h))    
+            self.add_name(self.name, str(h)) 
+        
+        self.first_time = len(results)    
 
     def start_requests(self): 
         urls = [            
@@ -45,6 +47,9 @@ class GdlpRestockSpider(scrapy.Spider):
         finish  = True
         tab = response.url.replace('?','/').split('/')[4]  
         categoria = 'gdlp_restock' 
+        
+        send = 'avisar' if int(self.first_time) > 0 else 'avisado'
+
         #pega todos os ites da pagina, apenas os nomes dos tenis
         nodes = [ name for name in response.xpath('//li[@class="item last"]') ]
         if(len(nodes) > 0 ):
@@ -57,6 +62,9 @@ class GdlpRestockSpider(scrapy.Spider):
             id_price = item.xpath('.//span[@class="regular-price"]/@id').get()           
             id = 'ID{}-{}$'.format(id_price.split('-')[-1].split('_')[0], tab)
             price = item.xpath('.//span[@class="price"]/text()').get()
+            deleter = Deleter()                      
+            deleter['id']=id
+            yield deleter
             record = Inserter()
             record['id']=id 
             record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
@@ -66,7 +74,7 @@ class GdlpRestockSpider(scrapy.Spider):
             record['name']=name 
             record['categoria']=categoria 
             record['tab']=tab 
-            record['send']='avisar'      
+            record['send']=send      
             record['imagens']=''  
             record['tamanhos']=''    
             record['price']=price          

@@ -11,8 +11,9 @@ class CrawlerPipeline:
         self.connection = Database()
 
     def inserir(self, item):       
-        result = self.connection.insert(item)
-        logging.log(logging.WARNING, "Item inserido no database {}".format(result)) 
+        self.connection.insert(item)
+        result = self.connection.search(['id'], {'id': item['id']})[0]        
+        logging.log(logging.WARNING, "Item inserido no database {}".format(len(result) == 1)) 
         
     def atualizar(self, item):             
         self.connection.update(item)

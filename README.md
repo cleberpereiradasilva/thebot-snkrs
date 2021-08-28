@@ -1,13 +1,13 @@
 # Descrição dos labels e seus respectivos links
-## artwalker_snkrs 
+## artwalk_snkrs 
 - https://www.artwalk.com.br/calendario-sneaker
 
-## artwalker_restock
+## artwalk_restock
 - https://www.artwalk.com.br/nike-air-max?O=OrderByPriceASC&PS=24
 - https://www.artwalk.com.br/nike-air-force?O=OrderByPriceASC&PS=24
 - https://www.artwalk.com.br/T%C3%AAnis/Jordan?O=OrderByReleaseDateDESC&&PS=24&map=specificationFilter_16,specificationFilter_15                     
 
-## artwalker_lancamentos
+## artwalk_lancamentos
 - https://www.artwalk.com.br/novidades?PS=24&O=OrderByReleaseDateDESC
 ---
 
@@ -109,10 +109,7 @@
   },
   "artwalk_restock": {
     "canal": 0000000000000    
-  },
-  "artwalk_snkrs": {
-    "canal": 0000000000000    
-  },
+  }, 
   "artwalk_lancamentos": {
     "canal": 0000000000000    
   },    
@@ -125,6 +122,9 @@
   "magicfeet_lancamentos": {
     "canal": 0000000000000    
   },
+  "magicfeet_snkrs": {
+    "canal": 0000000000000    
+  },  
   "maze_lancamentos": {
     "canal": 0000000000000    
   },
@@ -150,4 +150,8 @@
 
 * DISCORD_SERVER_KEY
 * ADMIN_CHANNEL
+
+* MONGO_USER
+* MONGO_PASSWORD
+* MONGO_URL
  

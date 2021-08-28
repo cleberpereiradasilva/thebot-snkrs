@@ -21,7 +21,9 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
             'spider':self.name,
         })        
         for h in [str(row[0]).strip() for row in results]:
-            self.add_name(self.name, str(h))         
+            self.add_name(self.name, str(h)) 
+        
+        self.first_time = len(results)         
 
     def start_requests(self):       
         urls = [
@@ -55,6 +57,9 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
             tab = 'jordan'             
         categoria = 'magicfeet_snkrs'       
         
+        
+        send = 'avisar' if int(self.first_time) > 0 else 'avisado'
+
         #pega todos os ites da pagina, apenas os nomes dos tenis
         nodes = [ name for name in response.xpath('//div[@class="shelf-item"]') ]
 
@@ -69,6 +74,9 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
             if in_stock:               
                 id = 'ID{}-{}$'.format(item.xpath('./@data-product-id').get(), tab)
                 price = item.xpath('.//span[@itemprop="price"]/text()').get()
+                deleter = Deleter()                      
+                deleter['id']=id
+                yield deleter
                 record = Inserter()
                 record['id']=id 
                 record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
@@ -78,7 +86,7 @@ class MagicfeetSnkrsSpider(scrapy.Spider):
                 record['name']=name 
                 record['categoria']=categoria 
                 record['tab']=tab 
-                record['send']='avisar'       
+                record['send']=send       
                 record['imagens']=''  
                 record['tamanhos']=''    
                 record['outros']=''

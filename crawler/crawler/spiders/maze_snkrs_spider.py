@@ -22,6 +22,8 @@ class MazeSnkrsSpider(scrapy.Spider):
         })        
         for h in [str(row[0]).strip() for row in results]:
             self.add_name(self.name, str(h)) 
+        
+        self.first_time = len(results) 
 
     def start_requests(self):       
         urls = [            
@@ -47,6 +49,9 @@ class MazeSnkrsSpider(scrapy.Spider):
         finish  = True                
         tab = response.url.split('=')[1].split('&')[0]        
         categoria = 'maze_snkrs'              
+        
+        send = 'avisar' if int(self.first_time) > 0 else 'avisado'
+
         #pega todos os ites da pagina, apenas os nomes dos tenis
         nodes = [ name for name in response.xpath('//div[@class="ui card produto product-in-card"]') ]
         if(len(nodes) > 0 ):
@@ -57,7 +62,10 @@ class MazeSnkrsSpider(scrapy.Spider):
             name = item.xpath('.//a/@title').get()
             prod_url = 'https://www.maze.com.br{}'.format(item.xpath('.//a/@href').get())
             id = 'ID{}-{}$'.format(item.xpath('.//meta[@itemprop="productID"]/@content').get(), tab)   
-            price = item.xpath('.//meta[@itemprop="price"]/@content').get().replace(',','').replace('.',',')            
+            price = item.xpath('.//meta[@itemprop="price"]/@content').get().replace(',','').replace('.',',')
+            deleter = Deleter()                      
+            deleter['id']=id
+            yield deleter            
             record = Inserter()
             record['id']=id 
             record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
@@ -67,7 +75,7 @@ class MazeSnkrsSpider(scrapy.Spider):
             record['name']=name 
             record['categoria']=categoria 
             record['tab']=tab 
-            record['send']='avisar'    
+            record['send']=send    
             record['imagens']=''  
             record['tamanhos']=''    
             record['outros']=''

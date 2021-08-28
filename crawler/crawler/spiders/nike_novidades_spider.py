@@ -1,17 +1,15 @@
 import scrapy
 import json, time
-import urllib
 from datetime import datetime
 try:
-    from crawler.crawler.items import Inserter, Updater, Deleter
+    from crawler.crawler.items import Inserter, Deleter
     from crawler.data.database import Database
 except:
-    from crawler.items import Inserter, Updater, Deleter
+    from crawler.items import Inserter, Deleter
     from data.database import Database
 class NikeNovidadesSpider(scrapy.Spider):    
     name = "nike_lancamentos"    
-    encontrados = {}
-    API_KEY = '26d1754da71447cf2f97a78b57fe6d67'
+    encontrados = {}    
     def __init__(self, database=None, url=None):
         self.url = url
         if database == None:
@@ -24,14 +22,10 @@ class NikeNovidadesSpider(scrapy.Spider):
             'spider':self.name,
         })        
         for h in [str(row[0]).strip() for row in results]:
-            self.add_name(self.name, str(h))     
+            self.add_name(self.name, str(h)) 
+        
+        self.first_time = len(results)     
 
-    
-
-    def get_scraperapi_url(self, url):
-        payload = {'api_key': self.API_KEY, 'url': url}
-        proxy_url = 'http://api.scraperapi.com/?' + urllib.parse.urlencode(payload)
-        return proxy_url    
 
     def start_requests(self):
         # urls = [
@@ -59,6 +53,8 @@ class NikeNovidadesSpider(scrapy.Spider):
         finish  = True
         tab = 'Feminino' if 'fem' in response.url else 'Masculino'
         categoria = 'nike_lancamentos_snkrs' if 'Calcados' in response.url else 'nike_lancamentos'
+        send = 'avisar' if int(self.first_time) > 0 else 'avisado'
+
         if(len(nodes) > 0 ):
             finish=False
 
@@ -70,6 +66,9 @@ class NikeNovidadesSpider(scrapy.Spider):
 
             if comprar == True:                
                 #checa se o que esta na pagina ainda nao esta no banco, nesse caso insere com o status de avisar                            
+                deleter = Deleter()                      
+                deleter['id']=id
+                yield deleter
                 record = Inserter()
                 record['id']=id 
                 record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
@@ -79,13 +78,14 @@ class NikeNovidadesSpider(scrapy.Spider):
                 record['name']=name 
                 record['categoria']=categoria 
                 record['tab']=tab 
-                record['send']='avisar'     
+                record['send']=send     
                 record['imagens']=''  
                 record['tamanhos']=''    
                 record['outros']=''
                 record['price']=item.xpath('.//span[contains(@class,"produto__preco_por")]/text()').get()                
                 if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:
-                    self.add_name(self.name, str(id))                       
+                    self.add_name(self.name, str(id))  
+                    time.sleep(2)
                     yield scrapy.Request(dont_filter=True, url =prod_url, callback=self.details,  meta=dict(record=record))
                 
 
@@ -94,7 +94,7 @@ class NikeNovidadesSpider(scrapy.Spider):
             part = uri[0]
             page = int(uri[1]) + 1
             url = '{}&p={}'.format(part, str(page))
-            time.sleep(3)
+            time.sleep(6)
             yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)
 
     def details(self, response):  

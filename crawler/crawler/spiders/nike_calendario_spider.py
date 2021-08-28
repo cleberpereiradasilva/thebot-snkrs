@@ -21,6 +21,8 @@ class NikeCalendarioSpider(scrapy.Spider):
         })        
         for h in [str(row[0]).strip() for row in results]:
             self.add_name(self.name, str(h)) 
+        
+        self.first_time = len(results) 
 
 
     def start_requests(self):       
@@ -40,6 +42,9 @@ class NikeCalendarioSpider(scrapy.Spider):
         finish  = True
         tab = response.url.replace('?','/').split('/')[4]  
         categoria = 'nike_calendario_snkrs'
+        
+        send = 'avisar' if int(self.first_time) > 0 else 'avisado'
+
         #pega todos os ites da pagina, apenas os nomes dos tenis
         nodes = [ name for name in response.xpath('//div[contains(@class,"produto produto--")]') ]
         if(len(nodes) > 0 ):
@@ -53,6 +58,9 @@ class NikeCalendarioSpider(scrapy.Spider):
             imagem = item.xpath('.//div[@class="produto__imagem"]//a//img/@data-src').get()
             release_full = item.xpath('.//h2[@class="produto__detalhe-titulo"]//span[descendant-or-self::text()]').get()
             quando = release_full.replace('<span class="snkr-release__mobile-date">','').replace('<span>','').replace('</span>','') .replace('Disponível às', 'Disponível em')
+            deleter = Deleter()                      
+            deleter['id']=id
+            yield deleter
             record = Inserter()
             record['id']=id
             record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
@@ -64,7 +72,7 @@ class NikeCalendarioSpider(scrapy.Spider):
             record['tab']=tab 
             record['imagens']=imagem
             record['tamanhos']=json.dumps([{"aguardando": quando}]) 
-            record['send']='avisar'    
+            record['send']=send    
             record['price']=''   
             record['outros']=''                
             if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     

@@ -21,8 +21,12 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
         results = self.database.search(['id'],{
             'spider':self.name,
         })        
-        for h in [str(row[0]).strip() for row in results]:
+        for h in [str(row[0]).strip() for row in results]:           
             self.add_name(self.name, str(h)) 
+        
+        self.first_time = len(results)         
+        
+        
 
     def start_requests(self):   
         urls = [
@@ -37,13 +41,11 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
         else:
             self.encontrados[key] = [id]
 
-   
-
-
     def parse(self, response):                        
         tab = 'artwalk_calendario' 
         categoria = 'artwalk_calendario' 
-        
+        send = 'avisar' if int(self.first_time) > 0 else 'avisado'
+
         #pega todos os ites da pagina, apenas os nomes dos tenis
         nodes = [ name for name in response.xpath('//div[@class="box-banner"]') ]      
 
@@ -63,7 +65,7 @@ class ArtwalkCalendarioSpider(scrapy.Spider):
             record['name']='' 
             record['categoria']=categoria 
             record['tab']=tab 
-            record['send']='avisar'    
+            record['send']=send    
             record['imagens']=''  
             record['tamanhos']=''    
             record['outros']=''

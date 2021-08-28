@@ -22,7 +22,9 @@ class GdlpNovidadesSpider(scrapy.Spider):
             'spider':self.name,
         })        
         for h in [str(row[0]).strip() for row in results]:
-            self.add_name(self.name, str(h))      
+            self.add_name(self.name, str(h)) 
+        
+        self.first_time = len(results)      
 
     def start_requests(self): 
         urls = [            
@@ -41,6 +43,9 @@ class GdlpNovidadesSpider(scrapy.Spider):
         finish  = True
         tab = 'gdlp_lancamentos'       
         categoria = 'gdlp_lancamentos' 
+        
+        send = 'avisar' if int(self.first_time) > 0 else 'avisado'
+
         #pega todos os ites da pagina, apenas os nomes dos tenis
         nodes = [ name for name in response.xpath('//li[@class="item last"]') ]
         if(len(nodes) > 0 ):
@@ -53,6 +58,9 @@ class GdlpNovidadesSpider(scrapy.Spider):
             id_price = item.xpath('.//span[@class="regular-price"]/@id').get()           
             id = 'ID{}$'.format(id_price.split('-')[-1].split('_')[0])
             price = item.xpath('.//span[@class="price"]/text()').get()
+            deleter = Deleter()                      
+            deleter['id']=id
+            yield deleter
             record = Inserter()
             record['id']=id 
             record['created_at']=datetime.now().strftime('%Y-%m-%d %H:%M') 
@@ -62,7 +70,7 @@ class GdlpNovidadesSpider(scrapy.Spider):
             record['name']=name 
             record['categoria']=categoria 
             record['tab']=tab 
-            record['send']='avisar'      
+            record['send']=send      
             record['imagens']=''  
             record['tamanhos']=''    
             record['price']=price          

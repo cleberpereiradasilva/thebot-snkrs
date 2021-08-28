@@ -92,10 +92,8 @@ class Sqlite():
                 print("====== Erro ao inserir =============")
                 return False
 
-        except sqlite3.Error as er:
-            print('SQLite error: %s' % (' '.join(er.args)))
-            print("Exception class is: ", er.__class__)
-            print('SQLite traceback: ')       
+        except Exception as e:
+            print(e)            
             return False     
             
     
@@ -130,6 +128,10 @@ class Sqlite():
     def get_all(self):
         query = 'SELECT id FROM products'        
         return [row for row in self.cursor.execute(query)]
+
+    def totais(self):
+        query = 'SELECT categoria, count(*) FROM products group by categoria order by categoria'
+        return [row for row in self.cursor.execute(query)]
     
     def search_name(self, word):
         query = 'SELECT url FROM products where lower(name) like "%{}%" or lower(url) like "%{}%"'.format(word.lower(), word.lower())
@@ -137,7 +139,7 @@ class Sqlite():
 
     def avisos(self, categoria):        
         query = 'SELECT id, name, url, imagens, tamanhos, price, codigo, outros FROM products where send="avisar" and categoria="{}"'.format(categoria)        
-        return [{'id': row[0], 'name': row[1], 'url': row[2], 'imagens': row[3].split('|'), 'tamanhos': row[4], 'price' : row[5], 'codigo': row[6], 'outros' : row[7].split('|') } for row in self.cursor.execute(query)]
+        return [{'id': row[0], 'name': row[1], 'url': row[2], 'imagens': row[3], 'tamanhos': row[4], 'price' : row[5], 'codigo': row[6], 'outros' : row[7].split('|') } for row in self.cursor.execute(query)]
 
     def isEmpty(self):
         rows = [row[0] for row in self.cursor.execute('SELECT count(id) FROM products')][0]           

@@ -22,7 +22,9 @@ class ArtwalkRestockSpider(scrapy.Spider):
             'spider':self.name,
         })        
         for h in [str(row[0]).strip() for row in results]:
-            self.add_name(self.name, str(h))
+            self.add_name(self.name, str(h)) 
+        
+        self.first_time = len(results)
 
 
     def start_requests(self):  
@@ -63,6 +65,9 @@ class ArtwalkRestockSpider(scrapy.Spider):
         categoria="artwalk_restock"       
         sl = response.meta['sl'].split('sl=')[1].split('&')[0]
         
+        
+        send = 'avisar' if int(self.first_time) > 0 else 'avisado'
+
         #pega todos os ites da pagina, apenas os nomes dos tenis
         nodes = [ name for name in response.xpath('//div[@class="product-item-container"]') ]
 
@@ -79,6 +84,9 @@ class ArtwalkRestockSpider(scrapy.Spider):
                 if not "Produto indis" in disponivel:                
                     codigo_parts = prod_url.split('-')            
                     id = 'ID{}-{}$'.format(''.join(codigo_parts[-3:]), tab)
+                    deleter = Deleter()                      
+                    deleter['id']=id
+                    yield deleter
                     record = Inserter()
                     record['id']=id
                     record['codigo']=''
@@ -88,7 +96,7 @@ class ArtwalkRestockSpider(scrapy.Spider):
                     record['name']=name 
                     record['categoria']=categoria 
                     record['tab']=tab 
-                    record['send']='avisar'  
+                    record['send']=send  
                     record['imagens']=''  
                     record['tamanhos']=''    
                     record['price']=price
