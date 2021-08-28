@@ -102,46 +102,48 @@
 
 # Configurações dos canais
 ```
-
-{  
-  "artwalk_calendario":{
-    "canal": 0000000000000
-  },
+{    
   "artwalk_restock": {
-    "canal": 0000000000000    
+    "canal": 0000000000
   }, 
   "artwalk_lancamentos": {
-    "canal": 0000000000000    
-  },    
+    "canal": 0000000000
+  },   
+  "artwalk_calendario": {
+    "canal": 0000000000
+  },
   "gdlp_lancamentos": {
-    "canal": 0000000000000    
+    "canal": 0000000000
   },
   "gdlp_restock": {
-    "canal": 0000000000000    
-  },  
+    "canal": 0000000000
+  }, 
   "magicfeet_lancamentos": {
-    "canal": 0000000000000    
+    "canal": 0000000000
   },
   "magicfeet_snkrs": {
-    "canal": 0000000000000    
-  },  
+    "canal": 0000000000
+  },
   "maze_lancamentos": {
-    "canal": 0000000000000    
+    "canal": 0000000000
   },
   "maze_restock": {
-    "canal": 0000000000000    
+    "canal": 0000000000
   },
   "maze_snkrs": {
-    "canal": 0000000000000    
+    "canal": 0000000000
   },
   "nike_lancamentos": {
-    "canal": 0000000000000    
+    "canal": 0000000000
   },
   "nike_restock": {
-    "canal": 0000000000000    
+    "canal": 0000000000
   },
   "nike_snkrs": {
-    "canal": 0000000000000    
+    "canal": 0000000000
+  },
+  "nike_calendario_snkrs: {
+    "canal": 0000000000
   }
 }
 ```

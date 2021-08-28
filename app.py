@@ -3,6 +3,7 @@ import multiprocessing
 import json
 import os
 import time
+import hashlib
 import sys
 from multiprocessing import Process, Queue
 from twisted.internet import reactor
@@ -29,7 +30,7 @@ from crawler.crawler.spiders.nike_novidades_spider import NikeNovidadesSpider
 from crawler.crawler.spiders.nike_restock_spider import NikeRestockSpider
 
 from crawler.crawler import normal_settings as normal_settings 
-from crawler.crawler import nike_settings as nike_settings 
+from crawler.crawler import nike_settings as slow_settings 
 from discord.ext import tasks
 from scrapy.settings import Settings
 
@@ -46,7 +47,7 @@ lite_db = Sqlite()
 def run_spider(spider, url=None):
     def f(q):
         try:
-            my_settings = nike_settings if 'nike' in str(spider) else normal_settings
+            my_settings = slow_settings if 'nike' in str(spider) or 'maze' in str(spider) else normal_settings
             crawler_settings = Settings()
             configure_logging()
             crawler_settings.setmodule(my_settings)                       
@@ -73,8 +74,8 @@ def run_spider(spider, url=None):
 
 def r_spiders():    
     spiders = [            
-            ArtwalkCalendarioSpider,
-            NikeRestockSpider,         
+            NikeRestockSpider,
+            ArtwalkCalendarioSpider,                     
             MazeSnkrsSpider,
             ArtwalkNovidadesSpider,            
             GdlpNovidadesSpider,
@@ -112,20 +113,26 @@ def r_spiders():
 def r_forever():
     database = Database()     
     n = 15
+    times = 0
     while True:
         try:
             r_spiders()
         except:
             pass
-        results = database.get_ultimos()
-        get_all = database.get_all()
-        rows = [str(row[0]).strip() for row in get_all]            
-        for row in rows:                    
-            if len( [id for id in results if str(id) == str(row)]) == 0 :                  
-                print('Removendo {}'.format(row))               
-                time.sleep(1)
-                database.delete(row)
-        database.delete_ultimos()
+
+        times = times + 1
+
+        if times > 20:
+            results = database.get_ultimos()
+            get_all = database.get_all()
+            rows = [str(row[0]).strip() for row in get_all]            
+            for row in rows:                    
+                if len( [id for id in results if str(id) == str(row)]) == 0 :                  
+                    print('Removendo {}'.format(row))               
+                    time.sleep(1)
+                    database.delete(row)
+            database.delete_ultimos()
+            times = 0
         print('Aguardando {}s'.format(n))
         time.sleep(n)
 
@@ -152,46 +159,46 @@ lista de comandos:
 >buscar \{palavra\}
 >canais
 >configurar 
-{  
-    "artwalk_calendario":{
-        "canal": 0000000000000
-    },
-    "artwalk_restock": {
-        "canal": 0000000000000    
-    },
-    "artwalk_snkrs": {
-        "canal": 0000000000000    
-    },
-    "artwalk_lancamentos": {
-        "canal": 0000000000000    
-    },    
-    "gdlp_lancamentos": {
-        "canal": 0000000000000    
-    },
-    "gdlp_restock": {
-        "canal": 0000000000000    
-    },    
-    "magicfeet_lancamentos": {
-        "canal": 0000000000000    
-    },
-    "maze_lancamentos": {
-        "canal": 0000000000000    
-    },
-    "maze_restock": {
-        "canal": 0000000000000    
-    },
-    "maze_snkrs": {
-        "canal": 0000000000000    
-    },
-    "nike_lancamentos": {
-        "canal": 0000000000000    
-    },
-    "nike_restock": {
-        "canal": 0000000000000    
-    },
-    "nike_snkrs": {
-        "canal": 0000000000000    
-    }
+{    
+  "artwalk_restock": {
+    "canal": 0000000000
+  }, 
+  "artwalk_lancamentos": {
+    "canal": 0000000000
+  },   
+  "artwalk_calendario": {
+    "canal": 0000000000
+  },
+  "gdlp_lancamentos": {
+    "canal": 0000000000
+  },
+  "gdlp_restock": {
+    "canal": 0000000000
+  }, 
+  "magicfeet_lancamentos": {
+    "canal": 0000000000
+  },
+  "magicfeet_snkrs": {
+    "canal": 0000000000
+  },
+  "maze_lancamentos": {
+    "canal": 0000000000
+  },
+  "maze_restock": {
+    "canal": 0000000000
+  },
+  "maze_snkrs": {
+    "canal": 0000000000
+  },
+  "nike_lancamentos": {
+    "canal": 0000000000
+  },
+  "nike_restock": {
+    "canal": 0000000000
+  },
+  "nike_snkrs": {
+    "canal": 0000000000
+  }
 }
 '''                    
         await send_to.send(helper)
@@ -301,7 +308,7 @@ lista de comandos:
         print('Logado...')  
         adm_channel = os.environ.get('ADMIN_CHANNEL')    
         send_to = self.get_channel(int(adm_channel))  
-        await send_to.send("Im ready and waiting for new products...")
+        await send_to.send("Tudo pronto e monitorando novos produtos!")
         
 
 
@@ -335,7 +342,7 @@ lista de comandos:
                 else:
                     description_text='**Código de estilos: ** {}\n**Preço: ** {}\n\n'.format(row['codigo'],row['price'])
                     tamanho_text='**Tamanhos**\n{}'.format(tamanho_desc)
-                    links_text='**Links Alternativos**\n' if len(row['outros'][1:3])>0 else ''
+                    links_text='\n**Links Alternativos**\n' if len(row['outros'][1:3])>0 else ''
 
                     embed = discord.Embed(title=message, url=row['url'], 
                         description='{}{}{}'.format(description_text,tamanho_text,links_text ), color=3066993) #,color=Hex code        
@@ -366,6 +373,7 @@ def r_discord():
 
 
 if __name__ == '__main__':
+
     database = Database()   
     # database.delete_all()   
     # print('Removendo...')
@@ -373,10 +381,10 @@ if __name__ == '__main__':
 
     first_time = database.isEmpty()    
     if first_time:
-        for i in range(0,2):
+        for i in range(0,3):
             r_spiders()
             print('Rodada {}'.format(i))
-            time.sleep(15)
+            time.sleep(1)
         database.avisar_todos()
 
     p2 = multiprocessing.Process(name='p2', target=r_discord)

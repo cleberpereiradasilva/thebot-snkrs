@@ -39,7 +39,7 @@ class NikeRestockSpider(scrapy.Spider):
         else:
             self.encontrados[key] = [id]
 
-    def _parse(self, response):     
+    def parse(self, response):     
         finish  = True
         tab = response.url.replace('?','/').split('/')[4]  
         categoria = 'nike_restock'
@@ -85,21 +85,6 @@ class NikeRestockSpider(scrapy.Spider):
             time.sleep(3)
             yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)
     
-    def parse(self, response):
-        try:
-            self.parse(response)
-        except Exception as e:
-            print("########## ERROR ON PARSE ##########")
-            print("########## ERROR ON PARSE ##########")
-            print("########## ERROR ON PARSE ##########")
-            print("########## ERROR ON PARSE ##########")
-            print("########## ERROR ON PARSE ##########")
-            print("########## ERROR ON PARSE ##########")
-            print("########## ERROR ON PARSE ##########")
-            print(e)
-            print('################################################################')
-            time.sleep(10)
-
             
     def details(self, response):
         record = Inserter()
