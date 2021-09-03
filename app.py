@@ -34,11 +34,33 @@ from crawler.crawler import nike_settings as slow_settings
 from discord.ext import tasks
 from scrapy.settings import Settings
 
-from twisted.python import log
-import logging
-logging.basicConfig(filemode='a', filename='scrapy_log.txt')
-observer = log.PythonLoggingObserver()
-observer.start()
+
+
+
+# from twisted.python import log
+# import logging
+# from logging.handlers import RotatingFileHandler
+# from scrapy.utils.log import configure_logging
+# configure_logging(install_root_handler=False)
+# log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+# log_level = logging.WARNING  # Or better yet get `LOG_LEVEL` from settings.
+# log_file = 'scrapy_log.log'  # Or better yet get `LOG_FILE` from settings.
+
+# logging.basicConfig(
+#     format=log_format,
+#     level=log_level
+# )
+
+# rotating_file_log = RotatingFileHandler(log_file, maxBytes=(1024*100), backupCount=1)
+# rotating_file_log.setFormatter(logging.Formatter(log_format))
+
+# root_logger = logging.getLogger()
+# root_logger.addHandler(rotating_file_log)
+
+
+# logging.basicConfig(filemode='a', filename='scrapy_log.txt')
+# observer = log.PythonLoggingObserver()
+# observer.start()
     
 lite_db = Sqlite() 
 
@@ -74,39 +96,39 @@ def run_spider(spider, url=None):
 
 def r_spiders():    
     spiders = [            
-            NikeRestockSpider,
-            ArtwalkCalendarioSpider,                     
-            MazeSnkrsSpider,
-            ArtwalkNovidadesSpider,            
+            #GdlpRestockSpider,
             GdlpNovidadesSpider,
-            MagicfeetSnkrsSpider,
-            ArtwalkRestockSpider,
-            NikeCalendarioSpider,
-            GdlpRestockSpider,
-            MazeRestockSpider,
-            MagicfeetNovidadesSpider,            
+            # NikeRestockSpider,
+            # ArtwalkCalendarioSpider,                     
+            # MazeSnkrsSpider,
+            # ArtwalkNovidadesSpider,                        
+            # MagicfeetSnkrsSpider,
+            # ArtwalkRestockSpider,
+            # NikeCalendarioSpider,            
+            # MazeRestockSpider,
+            # MagicfeetNovidadesSpider,            
     ]
 
     for spider in spiders:  
         run_spider(spider)
 
-    spiders = [
-            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1'},
-            {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/camisetas'},            
-            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1'},            
-            {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/meias'},
-            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1'},
-            {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/saia'},
-            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1'},
-            {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/calcas'},
-            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1'},
-            {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/gorros'},
-            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1'},            
-            {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/bones'},
-        ]
-    for spider in spiders:
-        run_spider(spider['spider'], spider['url'])
-        time.sleep(5)
+    # spiders = [
+    #         {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1'},
+    #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/camisetas'},            
+    #         {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1'},            
+    #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/meias'},
+    #         {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1'},
+    #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/saia'},
+    #         {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1'},
+    #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/calcas'},
+    #         {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1'},
+    #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/gorros'},
+    #         {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1'},            
+    #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/bones'},
+    #     ]
+    # for spider in spiders:
+    #     run_spider(spider['spider'], spider['url'])
+    #     time.sleep(5)
 
   
 
@@ -375,9 +397,9 @@ def r_discord():
 if __name__ == '__main__':
 
     database = Database()   
-    # database.delete_all()   
-    # print('Removendo...')
-    # time.sleep(10)
+    database.delete_all()   
+    print('Removendo...')
+    time.sleep(10)
 
     first_time = database.isEmpty()    
     if first_time:
@@ -394,3 +416,4 @@ if __name__ == '__main__':
     p1.start()
 
     
+

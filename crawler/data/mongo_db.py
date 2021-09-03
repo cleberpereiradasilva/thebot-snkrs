@@ -11,12 +11,19 @@ MONGO_URL=os.environ.get('MONGO_URL')
 class MongoDatabase(): 
     def __init__(self):        
         logging.log(logging.DEBUG, "Connecting Database ...")    
-        connection_string = "mongodb+srv://{}:{}@{}/?retryWrites=true&w=majority".format(MONGO_USER, MONGO_PASSWORD, MONGO_URL)
-        client = pymongo.MongoClient(connection_string)
-        mydb = client["snkrs"]
-        self.registros = mydb["registros"]       
-        self.ultimos = mydb["ultimos"]
-        logging.log(logging.INFO, "Database connected!")
+        try:
+            connection_string = "mongodb+srv://{}:{}@{}/?retryWrites=true&w=majority".format(MONGO_USER, MONGO_PASSWORD, MONGO_URL)
+            client = pymongo.MongoClient(connection_string)
+            mydb = client["snkrs"]
+            self.registros = mydb["registros"]       
+            self.ultimos = mydb["ultimos"]
+            logging.log(logging.INFO, "Database connected!")
+        except Exception as e:
+            print(e)            
+            raise Exception("\n\n\nErro ao conectar no banco de dados\n\n")
+            
+
+        
   
    
 

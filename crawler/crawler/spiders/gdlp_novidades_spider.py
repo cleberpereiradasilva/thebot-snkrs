@@ -11,7 +11,7 @@ except:
 class GdlpNovidadesSpider(scrapy.Spider):
     name = "gdlp_lancamentos"
     encontrados = {}   
-    def __init__(self, database=None):
+    def __init__(self, database=None):     
         if database == None:
             self.database = Database()
         else:    
