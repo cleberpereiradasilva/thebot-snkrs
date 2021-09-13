@@ -51,7 +51,7 @@ from scrapy.settings import Settings
 #     level=log_level
 # )
 
-# rotating_file_log = RotatingFileHandler(log_file, maxBytes=(1024*100), backupCount=1)
+# rotating_file_log = RotatingFileHandler(log_file, maxBytes=(1024*10000), backupCount=1)
 # rotating_file_log.setFormatter(logging.Formatter(log_format))
 
 # root_logger = logging.getLogger()
@@ -66,18 +66,19 @@ lite_db = Sqlite()
 
 
 
-def run_spider(spider, url=None):
+def run_spider(spider, url=None, proxy=None):
     def f(q):
         try:
-            my_settings = slow_settings if 'nike' in str(spider) or 'maze' in str(spider) else normal_settings
+            #my_settings = slow_settings if 'nike' in str(spider) or 'maze' in str(spider) else normal_settings
+            my_settings = normal_settings
             crawler_settings = Settings()
             configure_logging()
             crawler_settings.setmodule(my_settings)                       
             runner = CrawlerRunner(settings=crawler_settings)
             if url:                
-                runner.crawl(spider, url=url, database=None)
+                runner.crawl(spider, url=url, database=None, proxy_list=proxy)
             else:
-                runner.crawl(spider, )
+                runner.crawl(spider, proxy_list=proxy )
             deferred = runner.join()
             deferred.addBoth(lambda _: reactor.stop())
             reactor.run()
@@ -95,35 +96,59 @@ def run_spider(spider, url=None):
         raise result
 
 def r_spiders():    
-    spiders = [            
-            #GdlpRestockSpider,
-            GdlpNovidadesSpider,
-            # NikeRestockSpider,
-            # ArtwalkCalendarioSpider,                     
-            # MazeSnkrsSpider,
-            # ArtwalkNovidadesSpider,                        
-            # MagicfeetSnkrsSpider,
-            # ArtwalkRestockSpider,
-            # NikeCalendarioSpider,            
-            # MazeRestockSpider,
-            # MagicfeetNovidadesSpider,            
-    ]
+    proxy_env = os.environ.get('PROXY_LIST')
+    proxy_list = None
 
-    for spider in spiders:  
-        run_spider(spider)
+    if proxy_env:
+        proxy_list = proxy_env.split('|')    
+
+
+    run_spider(NikeRestockSpider, None, proxy_list)
+    run_spider(GdlpRestockSpider, None, proxy_list)
+    run_spider(NikeCalendarioSpider, None, proxy_list)
+    run_spider(GdlpNovidadesSpider, None, proxy_list)
+
+
+    # spiders = [            
+    #         #GdlpRestockSpider,
+    #         #GdlpNovidadesSpider,
+    #         #NikeRestockSpider,
+    #         ArtwalkCalendarioSpider,                     
+    #         MazeSnkrsSpider,
+    #         ArtwalkNovidadesSpider,                        
+    #         MagicfeetSnkrsSpider,
+    #         ArtwalkRestockSpider,
+    #         #NikeCalendarioSpider,            
+    #         MazeRestockSpider,
+    #         MagicfeetNovidadesSpider,            
+    # ]
+
+    # for spider in spiders:  
+    #     run_spider(spider)
+
+    
+    
+
+    spiders = [
+            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1'},            
+            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1'},                        
+            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1'},            
+            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1'},            
+            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1'},            
+            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1'},
+            
+        ]
+    for spider in spiders:
+        run_spider(spider['spider'], spider['url'], proxy_list)
+        time.sleep(2)
+
 
     # spiders = [
-    #         {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1'},
     #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/camisetas'},            
-    #         {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1'},            
     #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/meias'},
-    #         {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1'},
     #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/saia'},
-    #         {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1'},
     #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/calcas'},
-    #         {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1'},
     #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/gorros'},
-    #         {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1'},            
     #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/bones'},
     #     ]
     # for spider in spiders:
@@ -397,9 +422,9 @@ def r_discord():
 if __name__ == '__main__':
 
     database = Database()   
-    database.delete_all()   
-    print('Removendo...')
-    time.sleep(10)
+    # database.delete_all()   
+    # print('Removendo...')
+    # time.sleep(10)
 
     first_time = database.isEmpty()    
     if first_time:
@@ -409,11 +434,12 @@ if __name__ == '__main__':
             time.sleep(1)
         database.avisar_todos()
 
+
+    
+
     p2 = multiprocessing.Process(name='p2', target=r_discord)
     p2.start()
     time.sleep(5)
     p1 = multiprocessing.Process(name='p1', target=r_forever)    
     p1.start()
-
-    
 

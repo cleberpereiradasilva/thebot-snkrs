@@ -1,4 +1,4 @@
-import scrapy
+import scrapy,random
 import json
 from datetime import datetime
 try:
@@ -12,7 +12,9 @@ except:
 class GdlpRestockSpider(scrapy.Spider):
     name = "gdlp_restock"
     encontrados = {}   
-    def __init__(self, database=None):
+    def __init__(self, database=None, proxy_list=None):
+
+        self.proxy_pool = proxy_list
         if database == None:
             self.database = Database()
         else:    
@@ -25,7 +27,42 @@ class GdlpRestockSpider(scrapy.Spider):
         for h in [str(row[0]).strip() for row in results]:
             self.add_name(self.name, str(h)) 
         
-        self.first_time = len(results)    
+        self.first_time = len(results)  
+
+    def make_request(self, url, cb, meta=None, handle_failure=None):
+        request = scrapy.Request(dont_filter=True, url =url, callback=cb, meta=meta, errback=handle_failure)
+        if self.proxy_pool:
+            request.meta['proxy'] = random.choice(self.proxy_pool)              
+            self.log('Using proxy {}'.format(request.meta['proxy']))
+            self.log('----------------')
+        return request 
+
+    def detail_failure(self, failure):        
+        record = Inserter()
+        record = failure.request.meta['record']
+        # try with a new proxy
+        self.log('Erro em detalhes url {}'.format(failure.request.url))
+        self.log('Erro em detalhes url {}'.format(failure.request.url))
+        self.log('Erro em detalhes url {}'.format(failure.request.url))
+        self.log('Erro em detalhes url {}'.format(failure.request.url))
+        self.log('Erro em detalhes url {}'.format(failure.request.url))
+        self.log('Erro em detalhes url {}'.format(failure.request.url))
+        self.log('Erro em detalhes url {}'.format(failure.request.url))
+        request = self.make_request(failure.request.url, self.details, dict(record=record), self.detail_failure)
+        yield request 
+
+    def page_failure(self, failure):        
+        # try with a new proxy
+        self.log('**** Erro em PAGINACAO url {}'.format(failure.request.url))
+        self.log('**** Erro em PAGINACAO url {}'.format(failure.request.url))
+        self.log('**** Erro em PAGINACAO url {}'.format(failure.request.url))
+        self.log('**** Erro em PAGINACAO url {}'.format(failure.request.url))
+        self.log('**** Erro em PAGINACAO url {}'.format(failure.request.url))
+        self.log('**** Erro em PAGINACAO url {}'.format(failure.request.url))
+        self.log('**** Erro em PAGINACAO url {}'.format(failure.request.url))
+
+        request = self.make_request(failure.request.url, self.parse, None, self.page_failure)
+        yield request
 
     def start_requests(self): 
         urls = [            
@@ -35,7 +72,9 @@ class GdlpRestockSpider(scrapy.Spider):
             'https://gdlp.com.br/calcados/new-balance'
         ]
         for url in urls:
-            yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)  
+            request = self.make_request(url, self.parse, None, self.page_failure)            
+            yield request 
+            #yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)  
        
     def add_name(self, key, id):
         if key in  self.encontrados:
@@ -81,7 +120,9 @@ class GdlpRestockSpider(scrapy.Spider):
             record['outros']=''      
             if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     
                 self.add_name(self.name, str(id))
-                yield scrapy.Request(dont_filter=True, url =prod_url, callback=self.details,  meta=(dict(record=record)))
+                request = self.make_request(prod_url, self.details, dict(record=record), self.detail_failure)            
+                yield request
+                #yield scrapy.Request(dont_filter=True, url =prod_url, callback=self.details,  meta=(dict(record=record)))
         
         if(finish == False):
             paginacao = response.xpath('//div[@class="pages"]//li')

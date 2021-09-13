@@ -1,5 +1,5 @@
 import scrapy
-import json, time
+import json, time, random
 from datetime import datetime
 try:
     from crawler.crawler.items import Inserter,  Deleter
@@ -10,7 +10,9 @@ except:
 class NikeRestockSpider(scrapy.Spider):
     name = "nike_restock"
     encontrados = {}   
-    def __init__(self, database=None):
+    def __init__(self, database=None, proxy_list=None):
+
+        self.proxy_pool = proxy_list
         if database == None:
             self.database = Database()
         else:    
@@ -25,14 +27,52 @@ class NikeRestockSpider(scrapy.Spider):
         
         self.first_time = len(results) 
 
+    def make_request(self, url, cb, meta=None, handle_failure=None):
+        request = scrapy.Request(dont_filter=True, url =url, callback=cb, meta=meta, errback=handle_failure)
+        if self.proxy_pool:
+            request.meta['proxy'] = random.choice(self.proxy_pool)              
+            # self.log('Using proxy {}'.format(request.meta['proxy']))
+            # self.log('----------------')
+        return request 
+
+    def detail_failure(self, failure):        
+        record = Inserter()
+        record = failure.request.meta['record']
+        # try with a new proxy
+        self.log('Erro em detalhes url {}'.format(failure.request.url))
+        self.log('Erro em detalhes url {}'.format(failure.request.url))
+        self.log('Erro em detalhes url {}'.format(failure.request.url))
+        self.log('Erro em detalhes url {}'.format(failure.request.url))
+        self.log('Erro em detalhes url {}'.format(failure.request.url))
+        self.log('Erro em detalhes url {}'.format(failure.request.url))
+        self.log('Erro em detalhes url {}'.format(failure.request.url))
+        request = self.make_request(failure.request.url, self.details, dict(record=record), self.detail_failure)
+        yield request 
+
+    def page_failure(self, failure):        
+        # try with a new proxy
+        self.log('**** Erro em PAGINACAO url {}'.format(failure.request.url))
+        self.log('**** Erro em PAGINACAO url {}'.format(failure.request.url))
+        self.log('**** Erro em PAGINACAO url {}'.format(failure.request.url))
+        self.log('**** Erro em PAGINACAO url {}'.format(failure.request.url))
+        self.log('**** Erro em PAGINACAO url {}'.format(failure.request.url))
+        self.log('**** Erro em PAGINACAO url {}'.format(failure.request.url))
+        self.log('**** Erro em PAGINACAO url {}'.format(failure.request.url))
+
+        request = self.make_request(failure.request.url, self.parse, None, self.page_failure)
+        yield request
+        
+
     def start_requests(self):       
         urls = [            
-            'https://www.nike.com.br/Snkrs/Estoque?demanda=true&p=1',            
+            'https://www.nike.com.br/Snkrs/Estoque?demanda=true&p=1',                       
         ]       
 
         for url in urls:
-            yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)  
-       
+            request = self.make_request(url, self.parse, None, self.page_failure)            
+            yield request 
+      
+
     def add_name(self, key, id):
         if key in  self.encontrados:
             self.encontrados[key].append(id)
@@ -40,6 +80,9 @@ class NikeRestockSpider(scrapy.Spider):
             self.encontrados[key] = [id]
 
     def parse(self, response):     
+       
+
+
         finish  = True
         tab = response.url.replace('?','/').split('/')[4]  
         categoria = 'nike_restock'
@@ -47,6 +90,9 @@ class NikeRestockSpider(scrapy.Spider):
         send = 'avisar' if int(self.first_time) > 0 else 'avisado'
 
         #pega todos os ites da pagina, apenas os nomes dos tenis
+
+        
+
         nodes = [ name for name in response.xpath('//div[contains(@class,"produto produto--")]') ]
         if(len(nodes) > 0 ):
             finish=False       
@@ -75,15 +121,20 @@ class NikeRestockSpider(scrapy.Spider):
             record['price']=''             
             if len( [id_db for id_db in self.encontrados[self.name] if str(id_db) == str(id)]) == 0:     
                 self.add_name(self.name, str(id))  
-                yield scrapy.Request(dont_filter=True, url =prod_url, callback=self.details,  meta=dict(record=record))
+                request = self.make_request(prod_url, self.details, dict(record=record), self.detail_failure)            
+                yield request 
+                #yield scrapy.Request(dont_filter=True, url =prod_url, callback=self.details,  meta=dict(record=record))
         
         if(finish == False):
             uri = response.url.split('&p=')
             part = uri[0]
             page = int(uri[1]) + 1
             url = '{}&p={}'.format(part, str(page))
-            time.sleep(3)
-            yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)
+            #time.sleep(3)
+            self.add_name(self.name, str(id))  
+            request = self.make_request(url, self.parse, None, self.page_failure)
+            yield request 
+            #yield scrapy.Request(dont_filter=True, url =url, callback=self.parse)
     
             
     def details(self, response):

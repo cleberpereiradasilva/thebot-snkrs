@@ -8,6 +8,9 @@ from scrapy import signals
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
 
+# class ProxiesDownloaderMiddleware(object):   
+#     def process_request(self, request, spider):        
+#         request.meta['proxy'] = 'sabyvhfqbtw:qwhemO0XYR7iEAdI_country-Brazil_session-k4S3GxIk@proxy.btwproxy.io:8080'
 
 class CrawlerSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
