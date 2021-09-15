@@ -15,17 +15,20 @@ class MongoDatabase():
             connection_string = "mongodb+srv://{}:{}@{}/?retryWrites=true&w=majority".format(MONGO_USER, MONGO_PASSWORD, MONGO_URL)
             client = pymongo.MongoClient(connection_string)
             mydb = client["snkrs"]
-            self.registros = mydb["registros"]       
+            self.registros = mydb["registros"]
+            self.canais = mydb["canais"] 
             self.ultimos = mydb["ultimos"]
             logging.log(logging.INFO, "Database connected!")
         except Exception as e:
             print(e)            
             raise Exception("\n\n\nErro ao conectar no banco de dados\n\n")
-            
-
-        
   
-   
+    def configure(self, item):        
+        self.canais.delete_many({})
+        self.canais.insert_one(dict(item))
+
+    def get_canais(self):
+        return [[row[k] for k in row.keys()] for row in self.canais.find({},{'_id':0})] 
 
     def insert_ultimos(self, item):         
         self.ultimos.insert_one(dict(item))

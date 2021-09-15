@@ -37,8 +37,8 @@ from scrapy.settings import Settings
 
 
 
-# from twisted.python import log
-# import logging
+from twisted.python import log
+import logging
 # from logging.handlers import RotatingFileHandler
 # from scrapy.utils.log import configure_logging
 # configure_logging(install_root_handler=False)
@@ -54,15 +54,15 @@ from scrapy.settings import Settings
 # rotating_file_log = RotatingFileHandler(log_file, maxBytes=(1024*10000), backupCount=1)
 # rotating_file_log.setFormatter(logging.Formatter(log_format))
 
-# root_logger = logging.getLogger()
-# root_logger.addHandler(rotating_file_log)
+#root_logger = logging.getLogger()
+#root_logger.addHandler(rotating_file_log)
 
 
 # logging.basicConfig(filemode='a', filename='scrapy_log.txt')
 # observer = log.PythonLoggingObserver()
 # observer.start()
     
-lite_db = Sqlite() 
+#lite_db = Sqlite() 
 
 
 
@@ -78,7 +78,10 @@ def run_spider(spider, url=None, proxy=None):
             if url:                
                 runner.crawl(spider, url=url, database=None, proxy_list=proxy)
             else:
-                runner.crawl(spider, proxy_list=proxy )
+                if proxy:
+                    runner.crawl(spider, proxy_list=proxy )
+                else:
+                    runner.crawl(spider)
             deferred = runner.join()
             deferred.addBoth(lambda _: reactor.stop())
             reactor.run()
@@ -101,61 +104,47 @@ def r_spiders():
 
     if proxy_env:
         proxy_list = proxy_env.split('|')    
-
-
-    run_spider(NikeRestockSpider, None, proxy_list)
-    run_spider(GdlpRestockSpider, None, proxy_list)
-    run_spider(NikeCalendarioSpider, None, proxy_list)
-    run_spider(GdlpNovidadesSpider, None, proxy_list)
-
-
-    # spiders = [            
-    #         #GdlpRestockSpider,
-    #         #GdlpNovidadesSpider,
-    #         #NikeRestockSpider,
-    #         ArtwalkCalendarioSpider,                     
-    #         MazeSnkrsSpider,
-    #         ArtwalkNovidadesSpider,                        
-    #         MagicfeetSnkrsSpider,
-    #         ArtwalkRestockSpider,
-    #         #NikeCalendarioSpider,            
-    #         MazeRestockSpider,
-    #         MagicfeetNovidadesSpider,            
-    # ]
-
-    # for spider in spiders:  
-    #     run_spider(spider)
-
-    
     
 
-    spiders = [
-            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1'},            
-            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1'},                        
-            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1'},            
-            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1'},            
-            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1'},            
-            {'spider': NikeNovidadesSpider, 'url': 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1'},
+   
+        run_spider(NikeRestockSpider, None, proxy_list)    
+        run_spider(NikeCalendarioSpider, None, proxy_list)    
+        run_spider(GdlpRestockSpider, None, proxy_list)
+        run_spider(GdlpNovidadesSpider, None, proxy_list)    
+        run_spider(ArtwalkCalendarioSpider)
+        run_spider(ArtwalkNovidadesSpider)
+        run_spider(ArtwalkRestockSpider)    
+        run_spider(MazeRestockSpider)
+        run_spider(MazeSnkrsSpider)
+        run_spider(MagicfeetSnkrsSpider)
+        run_spider(MagicfeetNovidadesSpider)    
+        run_spider(NikeNovidadesSpider, 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',proxy_list)            
+
+    
+        run_spider(NikeNovidadesSpider, 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',proxy_list)                        
+
+    
+        run_spider(NikeNovidadesSpider, 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',proxy_list)            
+
+        run_spider(NikeNovidadesSpider, 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',proxy_list)            
+
+        run_spider(NikeNovidadesSpider, 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',proxy_list)            
+
+        run_spider(NikeNovidadesSpider, 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',proxy_list)
             
-        ]
-    for spider in spiders:
-        run_spider(spider['spider'], spider['url'], proxy_list)
-        time.sleep(2)
-
-
-    # spiders = [
-    #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/camisetas'},            
-    #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/meias'},
-    #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/saia'},
-    #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/calcas'},
-    #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/gorros'},
-    #         {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/bones'},
-    #     ]
-    # for spider in spiders:
-    #     run_spider(spider['spider'], spider['url'])
-    #     time.sleep(5)
-
   
+    
+        spiders = [
+                {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/camisetas'},            
+                {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/meias'},
+                {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/saia'},
+                {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/calcas'},
+                {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/gorros'},
+                {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/bones'},
+            ]
+        for spider in spiders:
+            run_spider(spider['spider'], spider['url'])
+            time.sleep(5)
 
 def r_forever():
     database = Database()     
@@ -169,7 +158,7 @@ def r_forever():
 
         times = times + 1
 
-        if times > 20:
+        if times > 50:            
             results = database.get_ultimos()
             get_all = database.get_all()
             rows = [str(row[0]).strip() for row in get_all]            
@@ -185,6 +174,7 @@ def r_forever():
 
 
 
+
 class MyClient(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)        
@@ -193,7 +183,7 @@ class MyClient(discord.Client):
         self.database.avisar_todos()
         self.first_time = self.database.isEmpty()
         try:
-            self.channels = json.loads(lite_db.get_config().replace("'",'"'))
+            self.channels = json.loads(database.get_canais()[0][0].replace("'",'"'))
         except:
             self.channels = {}
         self.my_background_task.start()
@@ -310,8 +300,9 @@ lista de comandos:
         bk_channels = self.channels
         try:
             config = channels.replace('>configurar','')            
-            channels_temp = json.loads(config)
-            self.channels = json.loads(lite_db.set_config(channels_temp).replace("'",'"'))                        
+            #channels_temp = json.loads(config)
+            database.configure({"canais" : config})            
+            self.channels = json.loads(database.get_canais()[0][0].replace("'",'"'))
             await send_to.send("Dados atualizados com sucesso!")            
         except:
             self.channels = json.loads(lite_db.set_config(bk_channels).replace("'",'"'))
@@ -373,7 +364,7 @@ lista de comandos:
     async def my_background_task(self): 
         print(' ============ DISCORD ===============')
         for channel in self.channels:                      
-            channel_id = int(self.channels[channel]['canal'])            
+            channel_id = int(self.channels[channel]['canal'])                        
             send_to = self.get_channel(channel_id)
             rows = self.database.avisos(channel)                                
             for row in rows:               
@@ -419,12 +410,16 @@ def r_discord():
         print(' ')
 
 
+        
+    
+
+
 if __name__ == '__main__':
 
-    database = Database()   
+    database = Database()     
     # database.delete_all()   
     # print('Removendo...')
-    # time.sleep(10)
+    # time.sleep(1)
 
     first_time = database.isEmpty()    
     if first_time:
@@ -435,11 +430,9 @@ if __name__ == '__main__':
         database.avisar_todos()
 
 
-    
-
     p2 = multiprocessing.Process(name='p2', target=r_discord)
     p2.start()
-    time.sleep(5)
+    # time.sleep(5)
     p1 = multiprocessing.Process(name='p1', target=r_forever)    
     p1.start()
 
