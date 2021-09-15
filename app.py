@@ -417,22 +417,24 @@ def r_discord():
 if __name__ == '__main__':
 
     database = Database()     
-    # database.delete_all()   
-    # print('Removendo...')
-    # time.sleep(1)
+    database.delete_all()   
+    print('Removendo...')
+    time.sleep(1)
 
-    first_time = database.isEmpty()    
-    if first_time:
-        for i in range(0,3):
-            r_spiders()
-            print('Rodada {}'.format(i))
-            time.sleep(1)
-        database.avisar_todos()
+    # first_time = database.isEmpty() 
+    
+
+    # if first_time:
+    #     for i in range(0,3):
+    #         r_spiders()
+    #         print('Rodada {}'.format(i))
+    #         time.sleep(1)
+    #     database.avisar_todos()
 
 
-    p2 = multiprocessing.Process(name='p2', target=r_discord)
-    p2.start()
-    # time.sleep(5)
-    p1 = multiprocessing.Process(name='p1', target=r_forever)    
-    p1.start()
+    # p2 = multiprocessing.Process(name='p2', target=r_discord)
+    # p2.start()
+    # # time.sleep(5)
+    # p1 = multiprocessing.Process(name='p1', target=r_forever)    
+    # p1.start()
 
