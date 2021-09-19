@@ -126,22 +126,6 @@ def r_spiders(n=1):
         run_spider(MazeSnkrsSpider)
 
     if n == 4:
-        run_spider(spider=NikeRestockSpider, proxy=proxy_list)    
-        run_spider(spider=NikeCalendarioSpider, proxy=proxy_list)    
-
-    if n == 5:
-        run_spider(spider=GdlpRestockSpider, proxy=proxy_list)
-        run_spider(spider=GdlpNovidadesSpider, proxy=proxy_list)
-        
-    if n == 6:      
-        run_spider(spider=NikeNovidadesSpider, url='https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',proxy=proxy_list)
-        run_spider(spider=NikeNovidadesSpider, url='https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',proxy=proxy_list)
-        run_spider(spider=NikeNovidadesSpider, url='https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',proxy=proxy_list)
-        run_spider(spider=NikeNovidadesSpider, url='https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',proxy=proxy_list)
-        run_spider(spider=NikeNovidadesSpider, url='https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',proxy=proxy_list)
-            
-  
-    if n == 7:
         spiders = [
                 {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/camisetas'},            
                 {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/meias'},
@@ -153,6 +137,24 @@ def r_spiders(n=1):
         for spider in spiders:
             run_spider(spider=spider['spider'], url=spider['url'])
             time.sleep(5)
+
+    if n == 5:
+        run_spider(spider=NikeRestockSpider, proxy=proxy_list)    
+        run_spider(spider=NikeCalendarioSpider, proxy=proxy_list)   
+
+    if n == 6:
+        run_spider(spider=GdlpRestockSpider, proxy=proxy_list)
+        run_spider(spider=GdlpNovidadesSpider, proxy=proxy_list)
+        
+    if n == 7:      
+        run_spider(spider=NikeNovidadesSpider, url='https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',proxy=proxy_list)
+        run_spider(spider=NikeNovidadesSpider, url='https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',proxy=proxy_list)
+        run_spider(spider=NikeNovidadesSpider, url='https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',proxy=proxy_list)
+        run_spider(spider=NikeNovidadesSpider, url='https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',proxy=proxy_list)
+        run_spider(spider=NikeNovidadesSpider, url='https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',proxy=proxy_list)
+            
+  
+    
 
 def r_forever(blc):
     n = 15
@@ -195,16 +197,22 @@ def r_discord():
 
 
 if __name__ == '__main__':  
-    #database.delete_all()   
-    #print('Removendo...')
-    #time.sleep(1)
-    #r_spiders()
+    # database.delete_all()   
+    # print('Removendo...')
+    # time.sleep(1)
+   
 
     first_time = database.isEmpty() 
     if first_time:
-        for i in range(0,3):
-            processos = []
+        for i in range(0,8):            
             for blc in range(1,8):    
+               r_spiders(i)
+            print('Rodada {}'.format(i))
+            time.sleep(1)
+
+
+        for i in range(0,5):            
+            for blc in range(5,8):    
                r_spiders(i)
             print('Rodada {}'.format(i))
             time.sleep(1)
@@ -219,5 +227,4 @@ if __name__ == '__main__':
 
     for p in processos:
         p.start()
-
 
