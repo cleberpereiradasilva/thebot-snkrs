@@ -63,8 +63,9 @@ class MongoDatabase():
 
     
     def search(self, fields, query):
-        fields = dict(zip(fields, [1]))        
-        return [[row['id']] for row in self.registros.find(query, fields)]
+        fields = dict.fromkeys(fields, 1)                         
+        fields['_id'] = 0
+        return [row for row in self.registros.find(query, fields)]
 
     def get_all(self):                
         return [[row[k] for k in row.keys()] for row in self.registros.find({},{'_id':0})] 

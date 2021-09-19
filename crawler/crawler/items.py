@@ -27,4 +27,4 @@ class Updater(scrapy.Item):
 
 class Deleter(scrapy.Item):
     id = scrapy.Field()
-    
+

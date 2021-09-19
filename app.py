@@ -1,6 +1,7 @@
-import discord
+
 import multiprocessing
 import json
+from multiprocessing import process
 import os
 import time
 import hashlib
@@ -11,8 +12,13 @@ from twisted.internet import reactor
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.log import configure_logging
 from crawler.data.database import Database
-from crawler.data.sqlite_db import Sqlite
-from discord.ext import tasks
+
+
+from crawler.discord.discord_client import DiscordClient
+
+
+
+
 from datetime import datetime
 from crawler.crawler.spiders.maze_snkrs_spider import MazeSnkrsSpider
 from crawler.crawler.spiders.artwalk_calendario_spider import ArtwalkCalendarioSpider
@@ -31,11 +37,7 @@ from crawler.crawler.spiders.nike_restock_spider import NikeRestockSpider
 
 from crawler.crawler import normal_settings as normal_settings 
 from crawler.crawler import nike_settings as slow_settings 
-from discord.ext import tasks
 from scrapy.settings import Settings
-
-
-
 
 from twisted.python import log
 import logging
@@ -54,19 +56,25 @@ import logging
 # rotating_file_log = RotatingFileHandler(log_file, maxBytes=(1024*10000), backupCount=1)
 # rotating_file_log.setFormatter(logging.Formatter(log_format))
 
-#root_logger = logging.getLogger()
-#root_logger.addHandler(rotating_file_log)
-
+# root_logger = logging.getLogger()
+# #root_logger.addHandler(rotating_file_log)
 
 # logging.basicConfig(filemode='a', filename='scrapy_log.txt')
 # observer = log.PythonLoggingObserver()
 # observer.start()
-    
-#lite_db = Sqlite() 
 
 
+database = Database()     
+results = database.search(['id', 'spider'],{})  
 
-def run_spider(spider, url=None, proxy=None):
+proxy_env = os.environ.get('PROXY_LIST')
+proxy_list = None
+
+if proxy_env:    
+    proxy_list = ['{}:{}@{}:{}'.format(p.split(':')[2],p.split(':')[3],p.split(':')[0],p.split(':')[1]) for p in proxy_env.split('|')] 
+
+
+def run_spider(spider=None, url=None, proxy=None):
     def f(q):
         try:
             #my_settings = slow_settings if 'nike' in str(spider) or 'maze' in str(spider) else normal_settings
@@ -75,13 +83,16 @@ def run_spider(spider, url=None, proxy=None):
             configure_logging()
             crawler_settings.setmodule(my_settings)                       
             runner = CrawlerRunner(settings=crawler_settings)
-            if url:                
-                runner.crawl(spider, url=url, database=None, proxy_list=proxy)
+            if url: 
+                if proxy:               
+                    runner.crawl(spider, results=results, url=url, proxy_list=proxy)
+                else:
+                    runner.crawl(spider, results=results, url=url)
             else:
                 if proxy:
-                    runner.crawl(spider, proxy_list=proxy )
+                    runner.crawl(spider, results=results, proxy_list=proxy )
                 else:
-                    runner.crawl(spider)
+                    runner.crawl(spider, results=results )
             deferred = runner.join()
             deferred.addBoth(lambda _: reactor.stop())
             reactor.run()
@@ -98,42 +109,39 @@ def run_spider(spider, url=None, proxy=None):
     if result is not None:
         raise result
 
-def r_spiders():    
-    proxy_env = os.environ.get('PROXY_LIST')
-    proxy_list = None
 
-    if proxy_env:
-        proxy_list = proxy_env.split('|')    
-    
+def r_spiders(n=1):    
 
-   
-        run_spider(NikeRestockSpider, None, proxy_list)    
-        run_spider(NikeCalendarioSpider, None, proxy_list)    
-        run_spider(GdlpRestockSpider, None, proxy_list)
-        run_spider(GdlpNovidadesSpider, None, proxy_list)    
+    if n == 1:
         run_spider(ArtwalkCalendarioSpider)
+        run_spider(ArtwalkRestockSpider) 
         run_spider(ArtwalkNovidadesSpider)
-        run_spider(ArtwalkRestockSpider)    
+
+    if n == 2:
+        run_spider(MagicfeetSnkrsSpider)
+        run_spider(MagicfeetNovidadesSpider)
+
+    if n == 3:
         run_spider(MazeRestockSpider)
         run_spider(MazeSnkrsSpider)
-        run_spider(MagicfeetSnkrsSpider)
-        run_spider(MagicfeetNovidadesSpider)    
-        run_spider(NikeNovidadesSpider, 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',proxy_list)            
 
-    
-        run_spider(NikeNovidadesSpider, 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',proxy_list)                        
+    if n == 4:
+        run_spider(spider=NikeRestockSpider, proxy=proxy_list)    
+        run_spider(spider=NikeCalendarioSpider, proxy=proxy_list)    
 
-    
-        run_spider(NikeNovidadesSpider, 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',proxy_list)            
-
-        run_spider(NikeNovidadesSpider, 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',proxy_list)            
-
-        run_spider(NikeNovidadesSpider, 'https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',proxy_list)            
-
-        run_spider(NikeNovidadesSpider, 'https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',proxy_list)
+    if n == 5:
+        run_spider(spider=GdlpRestockSpider, proxy=proxy_list)
+        run_spider(spider=GdlpNovidadesSpider, proxy=proxy_list)
+        
+    if n == 6:      
+        run_spider(spider=NikeNovidadesSpider, url='https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',proxy=proxy_list)
+        run_spider(spider=NikeNovidadesSpider, url='https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ACalcados&demanda=true&p=1',proxy=proxy_list)
+        run_spider(spider=NikeNovidadesSpider, url='https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3AAcess%F3rios&demanda=true&p=1',proxy=proxy_list)
+        run_spider(spider=NikeNovidadesSpider, url='https://www.nike.com.br/lancamento-fem-26?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',proxy=proxy_list)
+        run_spider(spider=NikeNovidadesSpider, url='https://www.nike.com.br/lancamento-masc-28?Filtros=Tipo%20de%20Produto%3ARoupas&demanda=true&p=1',proxy=proxy_list)
             
   
-    
+    if n == 7:
         spiders = [
                 {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/roupas/camisetas'},            
                 {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/meias'},
@@ -143,300 +151,76 @@ def r_spiders():
                 {'spider': MazeNovidadesSpider, 'url': 'https://www.maze.com.br/categoria/acessorios/bones'},
             ]
         for spider in spiders:
-            run_spider(spider['spider'], spider['url'])
+            run_spider(spider=spider['spider'], url=spider['url'])
             time.sleep(5)
 
-def r_forever():
-    database = Database()     
+def r_forever(blc):
     n = 15
     times = 0
     while True:
         try:
-            r_spiders()
+            r_spiders(blc)
         except:
             pass
 
-        times = times + 1
+        # times = times + 1
 
-        if times > 50:            
-            results = database.get_ultimos()
-            get_all = database.get_all()
-            rows = [str(row[0]).strip() for row in get_all]            
-            for row in rows:                    
-                if len( [id for id in results if str(id) == str(row)]) == 0 :                  
-                    print('Removendo {}'.format(row))               
-                    time.sleep(1)
-                    database.delete(row)
-            database.delete_ultimos()
-            times = 0
-        print('Aguardando {}s'.format(n))
+        # if times > 50: 
+        #     results = database.get_ultimos()
+        #     get_all = database.get_all()
+        #     rows = [str(row[0]).strip() for row in get_all]            
+        #     for row in rows:                    
+        #         if len( [id for id in results if str(id) == str(row)]) == 0 :                  
+        #             print('Removendo {}'.format(row))               
+        #             time.sleep(1)
+        #             database.delete(row)
+        #     database.delete_ultimos()
+        #     times = 0
+        #database.delete_ultimos()
+        print('Aguardando {}s p{}'.format(n, blc))
         time.sleep(n)
 
 
 
 
-class MyClient(discord.Client):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)        
-        # start the task to run in the background                             
-        self.database = Database() 
-        self.database.avisar_todos()
-        self.first_time = self.database.isEmpty()
-        try:
-            self.channels = json.loads(database.get_canais()[0][0].replace("'",'"'))
-        except:
-            self.channels = {}
-        self.my_background_task.start()
-
-    async def show_help(self, adm_channel):
-        send_to = self.get_channel(int(adm_channel))
-        helper = '''
-lista de comandos:
->delete \{url\}
->buscar \{palavra\}
->canais
->configurar 
-{    
-  "artwalk_restock": {
-    "canal": 0000000000
-  }, 
-  "artwalk_lancamentos": {
-    "canal": 0000000000
-  },   
-  "artwalk_calendario": {
-    "canal": 0000000000
-  },
-  "gdlp_lancamentos": {
-    "canal": 0000000000
-  },
-  "gdlp_restock": {
-    "canal": 0000000000
-  }, 
-  "magicfeet_lancamentos": {
-    "canal": 0000000000
-  },
-  "magicfeet_snkrs": {
-    "canal": 0000000000
-  },
-  "maze_lancamentos": {
-    "canal": 0000000000
-  },
-  "maze_restock": {
-    "canal": 0000000000
-  },
-  "maze_snkrs": {
-    "canal": 0000000000
-  },
-  "nike_lancamentos": {
-    "canal": 0000000000
-  },
-  "nike_restock": {
-    "canal": 0000000000
-  },
-  "nike_snkrs": {
-    "canal": 0000000000
-  }
-}
-'''                    
-        await send_to.send(helper)
-        return 
-
-
-    async def show_channels(self, adm_channel):
-        send_to = self.get_channel(int(adm_channel))
-        pretty_dict_str = json.dumps(self.channels, indent=2, sort_keys=True)                        
-        await send_to.send(pretty_dict_str)
-        return 
-
-    async def delete_by_url(self, url, adm_channel):
-        send_to = self.get_channel(int(adm_channel))        
-        try:
-            url = url.replace('>delete','').strip()
-            self.database.delete_by_url(url)            
-            await send_to.send("Dados removidos com sucesso!")            
-        except Exception as e:                        
-            await send_to.send("Erro ao remover os dados! Nada foi perdido.")
-        return 
-
-    async def search(self, url, adm_channel):
-        send_to = self.get_channel(int(adm_channel))        
-        try:
-            word = url.replace('>buscar','').strip()            
-            results = self.database.search_name(word)
-            if len(results) == 0 :
-                await send_to.send("Não foram encontrados registros!")
-            elif len(results) > 10:
-                await send_to.send("Foram encontrados muitos registros!\nPor favor seja um pouco mais específico.")
-            else:
-                result_list = '\n'.join([name[0] for name in results])
-                await send_to.send('Segue resultados da pesquisa:\n{}'.format(result_list))
-                
-        except Exception as e:
-            print(e)                    
-            await send_to.send("Erro ao buscar registros!")
-        return 
-
-    async def delete_all(self, adm_channel):
-        send_to = self.get_channel(int(adm_channel))        
-        try:            
-            self.database.delete_all()            
-            await send_to.send("Dados removidos com sucesso!")            
-        except Exception as e:                        
-            await send_to.send("Erro ao remover os dados! Nada foi perdido.")
-        return 
-
-    async def totais(self, adm_channel):
-        send_to = self.get_channel(int(adm_channel))        
-        try:            
-            results = self.database.totais()   
-            result_list = '\n'.join(["{}: {}".format(data[0], data[1]) for data in results])         
-            await send_to.send('Segue consolidado:\n{}'.format(result_list))
-        except Exception as e:                        
-            await send_to.send("Erro ao buscar os dados!")
-        return 
-    
-    async def set_channels(self, channels, adm_channel):
-        send_to = self.get_channel(int(adm_channel))
-        bk_channels = self.channels
-        try:
-            config = channels.replace('>configurar','')            
-            # channels_temp = json.loads(config)
-            database.configure({"canais" : config})            
-            self.channels = json.loads(database.get_canais()[0][0].replace("'",'"'))
-            await send_to.send("Dados atualizados com sucesso!")            
-        except:
-            database.configure({"canais" : bk_channels})  
-            self.channels = json.loads(database.get_canais()[0][0].replace("'",'"'))
-            await send_to.send("Erro ao atualizar os dados! Nada foi perdido.")
-        return 
-
-    async def on_message(self, message):             
-        adm_channel = os.environ.get('ADMIN_CHANNEL')
-        if adm_channel == None:
-            return
-
-        if int(message.channel.id) != int(adm_channel):           
-            return  #leave
-
-        if message.content.startswith('>help'):
-            await self.show_help(int(adm_channel))
-
-
-        if message.content.startswith('>canais'):
-            await self.show_channels(int(adm_channel))
-
-        if message.content.startswith('>buscar'):
-           await self.search(message.content, int(adm_channel))    
+def r_discord():  
+    key = os.environ.get('DISCORD_SERVER_KEY')           
+    client = DiscordClient()
+    client.run(key)
         
-        if message.content.startswith('>configurar'):
-           await self.set_channels(message.content, int(adm_channel))
-
-        if message.content.startswith('>delete'):
-           await self.delete_by_url(message.content, int(adm_channel))
-
-        if message.content.startswith('>truncate'):
-           await self.delete_all(int(adm_channel))
-
-        if message.content.startswith('>totais'):
-           await self.totais(int(adm_channel))
-
-        return
-
-        
-    async def on_ready(self):
-        print('Logado...')  
-        adm_channel = os.environ.get('ADMIN_CHANNEL')    
-        send_to = self.get_channel(int(adm_channel))  
-        await send_to.send("Tudo pronto e monitorando novos produtos!")
-        
-
-
-    def create_link(self, data, last):
-        if 'tamanho' in data.keys():
-            if 'url' in data.keys():
-                return '**{}** [**comprar**]({})| '.format(data['tamanho'], data['url']['href'])
-            else:
-                return '**{}**{} '.format(data['tamanho'], ' e' if last else ',')
-
-        if 'aguardando' in data.keys():
-            return '**{}**  '.format(data['aguardando'])
-    
-    @tasks.loop(seconds=15) # task runs every 15 seconds
-    async def my_background_task(self): 
-        print(' ============ DISCORD ===============')
-        for channel in self.channels:                      
-            channel_id = int(self.channels[channel]['canal'])                        
-            send_to = self.get_channel(channel_id)
-            rows = self.database.avisos(channel)                                
-            for row in rows:               
-                tamanhos = json.loads(row['tamanhos']) 
-                tamanho_desc = ''.join([self.create_link(k, (idt+1) == (len(tamanhos)-1)) for idt, k in enumerate(tamanhos)])[:-2].replace('|','\n')
-
-                message = '{}'.format(row['name'])
-                if 'aguardando' in row['tamanhos']:
-                    embed = discord.Embed(title=message, url=row['url'], 
-                        description=tamanho_desc, color=3066993) #,color=Hex code
-                    embed.set_thumbnail(url=row['imagens'].split('|')[0])                                               
-                    await send_to.send(embed=embed)
-                else:
-                    description_text='**Código de estilos: ** {}\n**Preço: ** {}\n\n'.format(row['codigo'],row['price'])
-                    tamanho_text='**Tamanhos**\n{}'.format(tamanho_desc)
-                    links_text='\n**Links Alternativos**\n' if len(row['outros'][1:3])>0 else ''
-
-                    embed = discord.Embed(title=message, url=row['url'], 
-                        description='{}{}{}'.format(description_text,tamanho_text,links_text ), color=3066993) #,color=Hex code        
-                    embed.set_thumbnail(url=row['imagens'].split('|')[0])                
-
-                    for idx, outros in enumerate(row['outros'][1:3]):                    
-                        embed.add_field(name='Link {}'.format(idx+1), value='[**aqui**]({})'.format(outros), inline=True)                    
-
-                    await send_to.send(embed=embed)
-                self.database.avisado(row['id'])  
-
-
-    @my_background_task.before_loop
-    async def before_my_task(self):
-        await self.wait_until_ready() # wait until the bot logs in
-
-def r_discord():
-    try:
-        key = os.environ.get('DISCORD_SERVER_KEY')           
-        client = MyClient()
-        client.run(key)
-        
-    except:
-        print(' ')      
-        print(' ********* ERROR NO DISCORD ********** ')
-        print(' ********* ERROR NO DISCORD ********** ')       
-        print(' ')
-
+  
 
         
     
 
 
-if __name__ == '__main__':
-
-    database = Database()     
-    # database.delete_all()   
-    # print('Removendo...')
-    # time.sleep(1)
+if __name__ == '__main__':  
+    #database.delete_all()   
+    #print('Removendo...')
+    #time.sleep(1)
+    #r_spiders()
 
     first_time = database.isEmpty() 
-    
-
     if first_time:
         for i in range(0,3):
-            r_spiders()
+            processos = []
+            for blc in range(1,8):    
+                processos.append(multiprocessing.Process(name='pi'+str(blc), target=r_spiders, args=(blc,)))
+            for p in processos:
+                p.start()
             print('Rodada {}'.format(i))
             time.sleep(1)
         database.avisar_todos()
 
-
     p2 = multiprocessing.Process(name='p2', target=r_discord)
     p2.start()
     # time.sleep(5)
-    p1 = multiprocessing.Process(name='p1', target=r_forever)    
-    p1.start()
+    processos = []
+    for i in range(1,8):        
+        processos.append(multiprocessing.Process(name='p'+str(i), target=r_forever, args=(i,)))
+
+    for p in processos:
+        p.start()
+
 
 

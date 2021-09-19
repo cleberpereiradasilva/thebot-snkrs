@@ -4,29 +4,16 @@ from datetime import datetime
 import logging
 try:
     from crawler.crawler.items import Inserter,  Deleter
-    from crawler.data.database import Database
 except:
     from crawler.items import Inserter,  Deleter
-    from data.database import Database
 
 class ArtwalkNovidadesSpider(scrapy.Spider):
     name = "artwalk_lancamentos"
     encontrados = {}   
-    def __init__(self, database=None):
-        if database == None:
-            self.database = Database()
-        else:    
-            self.database = database
-            
-        self.encontrados[self.name] = []
-
-        results = self.database.search(['id'],{
-            'spider':self.name,
-        })        
-        for h in [str(row[0]).strip() for row in results]:
-            self.add_name(self.name, str(h)) 
-        
-        self.first_time = len(results) 
+    def __init__(self, results):            
+        self.encontrados[self.name] = []      
+        [self.add_name(self.name, str(r['id']))  for r in results if r['spider'] == self.name]
+        self.first_time = len(self.encontrados[self.name])
 
 
     def start_requests(self):

@@ -10,22 +10,12 @@ except:
 class NikeNovidadesSpider(scrapy.Spider):    
     name = "nike_lancamentos"    
     encontrados = {}    
-    def __init__(self, database=None, url=None, proxy_list=None):
-        self.proxy_pool = proxy_list
+    def __init__(self, results, url=None, proxy_list=None):  
         self.url = url
-        if database == None:
-            self.database = Database()
-        else:    
-            self.database = database
-        self.encontrados[self.name] = []
-
-        results = self.database.search(['id'],{
-            'spider':self.name,
-        })        
-        for h in [str(row[0]).strip() for row in results]:
-            self.add_name(self.name, str(h)) 
-        
-        self.first_time = len(results)     
+        self.proxy_pool = proxy_list          
+        self.encontrados[self.name] = []      
+        [self.add_name(self.name, str(r['id']))  for r in results if r['spider'] == self.name]
+        self.first_time = len(self.encontrados[self.name])   
 
     def make_request(self, url, cb, meta=None, handle_failure=None):
         request = scrapy.Request(dont_filter=True, url =url, callback=cb, meta=meta, errback=handle_failure)

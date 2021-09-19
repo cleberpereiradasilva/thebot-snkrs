@@ -1,30 +1,17 @@
 import scrapy,json, time,random
 from datetime import datetime
 try:
-    from crawler.crawler.items import Inserter, Updater, Deleter
-    from crawler.data.database import Database
+    from crawler.crawler.items import Inserter, Deleter
 except:
-    from crawler.items import Inserter, Updater, Deleter
-    from data.database import Database
+    from crawler.items import Inserter, Deleter
 class NikeCalendarioSpider(scrapy.Spider):
     name = "nike_calendario"
     encontrados = {}  
-    def __init__(self, database=None, proxy_list=None):
-
-        self.proxy_pool = proxy_list
-        if database == None:
-            self.database = Database()
-        else:    
-            self.database = database
-        self.encontrados[self.name] = []
-
-        results = self.database.search(['id'],{
-            'spider':self.name,
-        })        
-        for h in [str(row[0]).strip() for row in results]:
-            self.add_name(self.name, str(h)) 
-        
-        self.first_time = len(results) 
+    def __init__(self, results, proxy_list=None):  
+        self.proxy_pool = proxy_list                    
+        self.encontrados[self.name] = []      
+        [self.add_name(self.name, str(r['id']))  for r in results if r['spider'] == self.name]
+        self.first_time = len(self.encontrados[self.name])
 
     def make_request(self, url, cb, meta=None, handle_failure=None):
         request = scrapy.Request(dont_filter=True, url =url, callback=cb, meta=meta, errback=handle_failure)
