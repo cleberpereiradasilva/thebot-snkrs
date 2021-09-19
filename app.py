@@ -205,9 +205,7 @@ if __name__ == '__main__':
         for i in range(0,3):
             processos = []
             for blc in range(1,8):    
-                processos.append(multiprocessing.Process(name='pi'+str(blc), target=r_spiders, args=(blc,)))
-            for p in processos:
-                p.start()
+               r_spiders(i)
             print('Rodada {}'.format(i))
             time.sleep(1)
         database.avisar_todos()
@@ -221,6 +219,5 @@ if __name__ == '__main__':
 
     for p in processos:
         p.start()
-
 
 
