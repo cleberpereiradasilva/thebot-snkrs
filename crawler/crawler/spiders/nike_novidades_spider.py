@@ -21,8 +21,8 @@ class NikeNovidadesSpider(scrapy.Spider):
         request = scrapy.Request(dont_filter=True, url =url, callback=cb, meta=meta, errback=handle_failure)
         if self.proxy_pool:
             request.meta['proxy'] = random.choice(self.proxy_pool)              
-            self.log('Using proxy {}'.format(request.meta['proxy']))
-            self.log('----------------')
+            # self.log('Using proxy {}'.format(request.meta['proxy']))
+            # self.log('----------------')
         return request 
 
     def detail_failure(self, failure):        

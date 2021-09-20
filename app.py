@@ -204,7 +204,7 @@ if __name__ == '__main__':
 
     first_time = database.isEmpty() 
     if first_time:
-        for i in range(0,8):            
+        for i in range(0,6):            
             for blc in range(1,8):    
                r_spiders(i)
             print('Rodada {}'.format(i))
@@ -227,4 +227,5 @@ if __name__ == '__main__':
 
     for p in processos:
         p.start()
+
 
